@@ -165,7 +165,45 @@ const SEASONS = {
 ["Tijjani Reijnders","CM",82],["Xavi Simons","AM",83],["Cody Gakpo","LW",85],
 ["Memphis Depay","ST",83],["Donyell Malen","RW",80],["Wout Weghorst","ST",78],
 ["Steven Bergwijn","LW",80],["Joey Veerman","CM",77],["Micky van de Ven","CB",80],
-["Jurriën Timber","RB",80],["Lutsharel Geertruida","RB",77],["Brian Brobbey","ST",77]]}
+["Jurriën Timber","RB",80],["Lutsharel Geertruida","RB",77],["Brian Brobbey","ST",77]]},
+
+{n:"WK 2026",a:"W26",p:[
+["Bart Verbruggen","GK",82],["Denzel Dumfries","RB",82],["Jeremie Frimpong","RB",80],
+["Matthijs de Ligt","CB",85],["Virgil van Dijk","CB",87],["Micky van de Ven","CB",83],
+["Nathan Aké","LB",83],["Jorrel Hato","LB",80],["Frenkie de Jong","CM",88],
+["Tijjani Reijnders","CM",84],["Ryan Gravenberch","CM",83],["Jerdy Schouten","DM",79],
+["Xavi Simons","AM",84],["Cody Gakpo","LW",85],["Donyell Malen","RW",80],
+["Justin Kluivert","RW",79],["Memphis Depay","ST",82],["Brian Brobbey","ST",78]]}
 
 ]
 };
+
+/* Tegenstanders voor de toernooimodus: andere landen met een globale
+   sterkte (str → aanval/verdediging). Per toernooi worden er 31 geloot. */
+const NATIONS = [
+  {n:"Argentinië",a:"ARG",str:91}, {n:"Frankrijk",a:"FRA",str:91},
+  {n:"Brazilië",a:"BRA",str:90}, {n:"Engeland",a:"ENG",str:88},
+  {n:"Spanje",a:"ESP",str:89}, {n:"Portugal",a:"POR",str:87},
+  {n:"Duitsland",a:"GER",str:86}, {n:"België",a:"BEL",str:85},
+  {n:"Italië",a:"ITA",str:85}, {n:"Kroatië",a:"CRO",str:84},
+  {n:"Uruguay",a:"URU",str:83}, {n:"Colombia",a:"COL",str:82},
+  {n:"Marokko",a:"MAR",str:83}, {n:"Japan",a:"JPN",str:81},
+  {n:"Denemarken",a:"DEN",str:81}, {n:"Zwitserland",a:"SUI",str:80},
+  {n:"Senegal",a:"SEN",str:81}, {n:"Verenigde Staten",a:"USA",str:79},
+  {n:"Mexico",a:"MEX",str:79}, {n:"Servië",a:"SRB",str:79},
+  {n:"Oostenrijk",a:"AUT",str:80}, {n:"Turkije",a:"TUR",str:80},
+  {n:"Noorwegen",a:"NOR",str:80}, {n:"Zweden",a:"SWE",str:78},
+  {n:"Polen",a:"POL",str:78}, {n:"Oekraïne",a:"UKR",str:78},
+  {n:"Ecuador",a:"ECU",str:77}, {n:"Nigeria",a:"NGA",str:78},
+  {n:"Ivoorkust",a:"CIV",str:77}, {n:"Zuid-Korea",a:"KOR",str:78},
+  {n:"Australië",a:"AUS",str:76}, {n:"Egypte",a:"EGY",str:77},
+  {n:"Algerije",a:"ALG",str:77}, {n:"Ghana",a:"GHA",str:76},
+  {n:"Schotland",a:"SCO",str:77}, {n:"Hongarije",a:"HUN",str:77},
+  {n:"Tsjechië",a:"CZE",str:77}, {n:"Wales",a:"WAL",str:76},
+  {n:"Canada",a:"CAN",str:76}, {n:"Kameroen",a:"CMR",str:75},
+  {n:"Iran",a:"IRN",str:75}, {n:"Peru",a:"PER",str:74},
+  {n:"Chili",a:"CHI",str:75}, {n:"Saoedi-Arabië",a:"KSA",str:72},
+  {n:"Qatar",a:"QAT",str:71}, {n:"Costa Rica",a:"CRC",str:72},
+  {n:"Panama",a:"PAN",str:71}, {n:"Tunesië",a:"TUN",str:74}
+];
+

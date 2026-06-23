@@ -1,9 +1,9 @@
 # oranje-1-3
 
-**1–3 · De Oranje draft challenge** — een fan-spel over het Nederlands elftal:
-**1× goud, 3× zilver**. Rol eindrondes,
-draft een all-time Oranje-elftal uit elke EK- en WK-selectie sinds WK 1974 en
-simuleer een seizoen tegen alle historische selecties.
+**Oranje op het WK** — een fan-spel over het Nederlands elftal. Draft een
+all-time Oranje-elftal uit elke EK- en WK-selectie sinds 1974 en neem het mee
+naar een eigen eindtoernooi: groepsfase, knock-out en de finale, tegen 31 andere
+landen. Word je eindelijk wereldkampioen, of toch weer zilver?
 
 De naam **1–3** is het cynische record: één gewonnen finale (EK 1988) tegen drie
 verloren WK-finales (1974, 1978, 2010). Het mooiste elftal zonder wereldtitel.
@@ -27,23 +27,26 @@ Of host het gratis op GitHub Pages: zet de repo online en kies bij
 1. **Stel in** — teamnaam, formatie en speelstijl (verdedigend / gebalanceerd /
    aanvallend).
 2. **Draft** — 11 rondes lang rol je een willekeurige eindronde (EK/WK sinds
-   1974). Kies een speler uit die selectie en zet hem op een passende positie.
-   Max 3 rerolls. Met het **eindrondes**-filter beperk je de draft tot bepaalde
-   toernooien.
-3. **Simuleer** — je elftal speelt een heel seizoen tegen alle 20 historische
-   Oranje-selecties. De ratings bepalen de kansen; daarna volgt de eindstand.
+   1974, t/m WK 2026). Kies een speler uit die selectie en zet hem op een
+   passende positie. Max 3 rerolls. Met het **eindrondes**-filter beperk je de
+   draft tot bepaalde toernooien.
+3. **Speel het WK** — je elftal gaat naar een eindtoernooi: eerst de groepsfase
+   (poule van 4), dan de knock-out (achtste, kwart, halve finale, finale) tegen
+   31 andere landen. Verlies je de finale, dan is het zilver — alweer.
 
-Records en badges worden lokaal bewaard (`localStorage`). Taal NL/EN, geluid en
-een spelersdatabase zitten in de header.
+Achievements onderweg: **Wereldkampioen**, **Zilver alweer** (finale verloren),
+**Groepswinst**, **Totaalvoetbal** (3+ spelers uit '74/'78), **De klasse van
+'88**, en meer. Records en badges worden lokaal bewaard (`localStorage`). Taal
+NL/EN, geluid en een spelersdatabase zitten in de header.
 
-## Eindrondes (20)
+## Eindrondes (21)
 
 WK 1974 · EK 1976 · WK 1978 · EK 1980 · EK 1988 · WK 1990 · EK 1992 · WK 1994 ·
 EK 1996 · WK 1998 · EK 2000 · EK 2004 · WK 2006 · EK 2008 · WK 2010 · EK 2012 ·
-WK 2014 · EK 2021 · WK 2022 · EK 2024
+WK 2014 · EK 2021 · WK 2022 · EK 2024 · WK 2026
 
 (Oranje deed niet aan elk toernooi mee; ontbrekende eindrondes zijn de
-toernooien waarvoor het zich niet plaatste.)
+toernooien waarvoor het zich niet plaatste. WK 2026 is een projectie.)
 
 ## Bestanden
 

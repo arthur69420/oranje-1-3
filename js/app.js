@@ -171,7 +171,7 @@ try { hardcore = localStorage.getItem(SK+"hardcore") === "1"; } catch(e){}
 let sandbox = false;
 try { sandbox = localStorage.getItem(SK+"sandbox") === "1"; } catch(e){}
 let phase = "setup";
-let teamName = "Mijn XI";
+let teamName = CFG.defaultName || "Mijn XI";
 let picks = Array(11).fill(null);
 let pickedCount = 0;
 let picked = new Set();
@@ -770,49 +770,139 @@ function playMatch(h, a, mods){
   if(a.mine){ la += mods.gf; lh += mods.ga; }
   return [poisson(lh), poisson(la)];
 }
+/* ================= toernooi-teksten (los van I18N, voor de toernooimodus) ===== */
+const TT = {
+  nl: {
+    world_cup:"WK", group:"Groep", th_group:"Groep", pens:"n.s.",
+    r16:"Achtste", qf:"Kwartfinale", sf:"Halve finale", final:"Finale", world_champ:"Wereldkampioen",
+    st_round:"Ronde", st_won:"Winst", st_draw:"Gelijk", st_lost:"Verlies", st_gf:"Goals voor", st_ga:"Goals tegen",
+    stg_champ:"Wereldkampioen", stg_final:"Finale", stg_sf:"Halve finale", stg_qf:"Kwartfinale", stg_r16:"Achtste finale", stg_group:"Groepsfase",
+    v_champ:tn=>"WERELDKAMPIOEN! "+tn+" heeft de beker eindelijk te pakken.",
+    v_champ_unbeaten:tn=>"WERELDKAMPIOEN — en ongeslagen. "+tn+" is onsterfelijk.",
+    v_runner:"Verloren finale. Zilver — alweer. Het 1–3-verhaal in het kort.",
+    v_sf:"Halve finale. Zó dichtbij de finale, en toch naar huis.",
+    v_qf:"Kwartfinale. Het toernooi zit erop.",
+    v_r16:"Achtste finale. Vroeg uitgeschakeld.",
+    v_group:"Groepsfase. Niet eens de knock-out gehaald.",
+    sub:(g,n)=>"Groep "+g+" · "+n+" landen"
+  },
+  en: {
+    world_cup:"WC", group:"Group", th_group:"Group", pens:"pens",
+    r16:"Last 16", qf:"Quarter-final", sf:"Semi-final", final:"Final", world_champ:"World champion",
+    st_round:"Round", st_won:"Won", st_draw:"Drawn", st_lost:"Lost", st_gf:"Goals for", st_ga:"Goals against",
+    stg_champ:"World champion", stg_final:"Final", stg_sf:"Semi-final", stg_qf:"Quarter-final", stg_r16:"Last 16", stg_group:"Group stage",
+    v_champ:tn=>"WORLD CHAMPIONS! "+tn+" finally lift the trophy.",
+    v_champ_unbeaten:tn=>"WORLD CHAMPIONS — and unbeaten. "+tn+" are immortal.",
+    v_runner:"Lost final. Silver — again. The 1–3 story in a nutshell.",
+    v_sf:"Semi-final. So close to the final, yet sent home.",
+    v_qf:"Quarter-final. The tournament is over.",
+    v_r16:"Last 16. Knocked out early.",
+    v_group:"Group stage. Didn't even reach the knockouts.",
+    sub:(g,n)=>"Group "+g+" · "+n+" nations"
+  }
+};
+const tt = (k,...a) => { const v=(TT[LANG]||TT.nl)[k]; return typeof v==="function"?v(...a):v; };
+
+/* ================= toernooisimulatie (groepsfase + knock-out) ================= */
+const cmpTable = (x,y) => y.pts-x.pts || (y.gf-y.ga)-(x.gf-x.ga) || y.gf-x.gf || (Math.random()-0.5);
+function blankRec(o){ o.w=0; o.d=0; o.l=0; o.gf=0; o.ga=0; o.pts=0; o.gp=0; return o; }
+function logMatch(t,gf,ga){ t.gp++; t.gf+=gf; t.ga+=ga; if(gf>ga){t.w++; t.pts+=3;} else if(gf<ga){t.l++;} else {t.d++; t.pts++;} }
+function pickNations(n){
+  return shuffle(NATIONS).slice(0,n).map(o => blankRec({ name:o.n, a:o.a, att:o.str, def:o.str, str:o.str, mine:false }));
+}
+function knockoutMatch(h,a,mods,rig){
+  let [gh,ga] = playMatch(h,a,mods);
+  if(rig && h.mine && gh<=ga) gh = ga+1;
+  if(rig && a.mine && ga<=gh) ga = gh+1;
+  let pens=false, ph=0, pa=0;
+  if(gh===ga){ pens=true; do{ ph=3+poisson(1.4); pa=3+poisson(1.4); }while(ph===pa); }
+  const hWins = pens ? ph>pa : gh>ga;
+  return { gh,ga,pens,ph,pa, win:hWins?h:a };
+}
+function fixClass(x){
+  if(x.mg > x.og) return "W";
+  if(x.mg < x.og) return "V";
+  return x.won === true ? "W" : (x.won === false ? "V" : "G");
+}
 function simulate(rig){
   phase = "season";
   if(rig) disarmRig();
   $("simbtn").classList.remove("show");
   phaseKey = "phase_season"; hintKey = "ready_hint"; hintArg = teamName;
   $("phaseline").textContent = t("phase_season") + (rig ? " · " + t("demo") : "");
-  season = draftSeasons.length ? rnd(draftSeasons) : rnd(Object.keys(SEASONS));
-  replacedClub = rnd(clubs());
+  season = tt("world_cup");
   const r = ratings();
   const mods = styleMods();
-  const teams = [{ name: teamName, a: "JIJ", att: r.att, def: r.def, mine: true }]
-    .concat(clubs().filter(c => c.n !== replacedClub.n).map(c => ({ name: c.n, a: c.a, att: c.att, def: c.def, mine: false })));
-  teams.forEach(t => { t.w = 0; t.d = 0; t.l = 0; t.gf = 0; t.ga = 0; t.pts = 0; });
+  const me = blankRec({ name: teamName, a:"NED", att:r.att, def:r.def, mine:true });
+  const field = shuffle([me, ...pickNations(31)]);
+  const GL = "ABCDEFGH";
+  const groups = [];
+  for(let g=0; g<8; g++) groups.push(field.slice(g*4, g*4+4));
 
-  const myResults = [];
-  for(let i = 0; i < teams.length; i++){
-    for(let j = 0; j < teams.length; j++){
-      if(i === j) continue;
-      const h = teams[i], a = teams[j];
-      let [gh, ga] = playMatch(h, a, mods);
-      if(rig && h.mine){ gh = 1 + poisson(1.4); ga = Math.min(ga, gh - 1); }
-      if(rig && a.mine){ ga = 1 + poisson(1.4); gh = Math.min(gh, ga - 1); }
-      h.gf += gh; h.ga += ga; a.gf += ga; a.ga += gh;
-      if(gh > ga){ h.w++; a.l++; h.pts += 3; }
-      else if(gh < ga){ a.w++; h.l++; a.pts += 3; }
-      else { h.d++; a.d++; h.pts++; a.pts++; }
-      if(h.mine) myResults.push({ opp: a, home: true,  mg: gh, og: ga });
-      if(a.mine) myResults.push({ opp: h, home: false, mg: ga, og: gh });
+  const myMatches = [];
+  let myGroup = null, myGroupLetter = "";
+  const advancers = [];
+  groups.forEach((grp, gi) => {
+    for(let i=0;i<4;i++) for(let j=i+1;j<4;j++){
+      const h=grp[i], a=grp[j];
+      let [gh,ga] = playMatch(h,a,mods);
+      if(rig && h.mine && gh<=ga) gh=ga+1;
+      if(rig && a.mine && ga<=gh) ga=gh+1;
+      logMatch(h,gh,ga); logMatch(a,ga,gh);
+      if(h.mine) myMatches.push({ opp:a, round:tt("group")+" "+GL[gi], mg:gh, og:ga });
+      if(a.mine) myMatches.push({ opp:h, round:tt("group")+" "+GL[gi], mg:ga, og:gh });
     }
+    const std = grp.slice().sort(cmpTable);
+    if(grp.indexOf(me) >= 0){
+      myGroupLetter = GL[gi];
+      // momentopname ná de groepsfase (de teamobjecten muteren nog in de knock-out)
+      myGroup = std.map(tm => ({ name:tm.name, mine:!!tm.mine, w:tm.w, d:tm.d, l:tm.l, gf:tm.gf, ga:tm.ga, pts:tm.pts }));
+    }
+    advancers.push([std[0], std[1]]);
+  });
+
+  const W = advancers.map(p=>p[0]), R = advancers.map(p=>p[1]);
+  let round = [ W[0],R[1], W[2],R[3], W[4],R[5], W[6],R[7],
+                W[1],R[0], W[3],R[2], W[5],R[4], W[7],R[6] ];
+  const round16 = round.slice();
+  const roundKeys = ["r16","qf","sf","final"];
+  let stage = 0, myExit = -1;
+  while(round.length > 1){
+    const next = [];
+    for(let k=0;k<round.length;k+=2){
+      const h=round[k], a=round[k+1];
+      const m = knockoutMatch(h,a,mods,rig);
+      logMatch(h,m.gh,m.ga); logMatch(a,m.ga,m.gh);
+      if(h.mine || a.mine){
+        const opp = h.mine ? a : h;
+        myMatches.push({ opp, round:tt(roundKeys[stage]),
+          mg: h.mine?m.gh:m.ga, og: h.mine?m.ga:m.gh,
+          pens:m.pens, pmg:h.mine?m.ph:m.pa, pog:h.mine?m.pa:m.ph, won:m.win.mine });
+        if(!m.win.mine) myExit = stage;
+      }
+      next.push(m.win);
+    }
+    round = next; stage++;
   }
-  const me = teams[0];
-  const order = shuffle(myResults);
-  if(!rig) lastOrder = order;
-  teams.sort((x,y) => y.pts - x.pts || (y.gf - y.ga) - (x.gf - x.ga) || y.gf - x.gf);
-  const myPos = teams.indexOf(me) + 1;
-  if(!rig) lastTeams = teams;
+  const champion = round[0];
+
+  let result;
+  if(round16.indexOf(me) < 0)  result = { stage:"group", placement:17 };
+  else if(champion.mine)       result = { stage:"champ", placement:1 };
+  else { const M=[["r16",16],["qf",8],["sf",3],["final",2]]; result = { stage:M[myExit][0], placement:M[myExit][1] }; }
+  result.champion = champion;
+  result.unbeaten = (me.l === 0);
+  result.groupWon = !!(myGroup && myGroup[0].mine);
+
+  const data = { me, result, myGroup, myGroupLetter, myMatches, champion, rig };
+  if(!rig){ lastTourney = data; lastMe = me; lastPos = result.placement; lastOrder = myMatches; lastTeams = myGroup; }
 
   $("season").classList.add("show");
   $("finale").classList.remove("show");
   $("seasonteam").textContent = teamName;
-  $("seasonyear").textContent = season;
-  $("tableyear").textContent = season;
-  $("seasonsub").textContent = t("replaces", teamName, replacedClub.n) + (rig ? t("demo_tag") : "");
+  $("seasonyear").textContent = "🏆";
+  $("tableyear").textContent = tt("th_group") + " " + myGroupLetter;
+  $("seasonsub").textContent = tt("sub", myGroupLetter, 32) + (rig ? t("demo_tag") : "");
   const grid = $("fixgrid");
   grid.innerHTML = "";
   $("season").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -820,21 +910,78 @@ function simulate(rig){
   let i = 0;
   clearInterval(revealTimer);
   revealTimer = setInterval(() => {
-    if(i >= order.length){
+    if(i >= myMatches.length){
       clearInterval(revealTimer);
-      showFinale(teams, me, myPos, rig);
+      renderTournamentFinale(data, true);
       return;
     }
-    const x = order[i];
-    const res = x.mg > x.og ? "W" : (x.mg < x.og ? "V" : "G");
+    const x = myMatches[i];
     const div = document.createElement("div");
-    div.className = "fix " + res;
-    div.innerHTML = '<div class="top"><span>R'+(i+1)+'</span><span>'+x.opp.a+' \u00B7 '+(x.home ? t("home") : t("away"))+'</span></div>'
-      + '<div class="sc">'+x.mg+'\u2013'+x.og+'</div>';
+    div.className = "fix " + fixClass(x);
+    const sc = x.mg + "\u2013" + x.og + (x.pens ? ' <small>('+x.pmg+"\u2013"+x.pog+" "+tt("pens")+')</small>' : "");
+    div.innerHTML = '<div class="top"><span>'+x.round+'</span><span>'+x.opp.a+'</span></div>'
+      + '<div class="sc">'+sc+'</div>';
     grid.appendChild(div);
     requestAnimationFrame(() => div.classList.add("in"));
     i++;
-  }, 80);
+  }, 220);
+}
+function stageLabel(stage){ return tt("stg_"+stage); }
+function tourneyVerdict(result){
+  if(result.stage === "champ") return result.unbeaten ? tt("v_champ_unbeaten", teamName) : tt("v_champ", teamName);
+  return tt(result.stage === "final" ? "v_runner" : "v_"+result.stage);
+}
+function renderTournamentFinale(data, animate){
+  const { me, result, myGroup, myGroupLetter, champion, rig } = data;
+  phase = "done";
+  setPhaseLine("phase_done");
+  $("seasonsub").textContent = tt("world_champ") + ": " + (champion.mine ? teamName : champion.name);
+  const stat = (lbl,val,acc) => '<div class="stat'+(acc?" accent":"")+'"><div class="l">'+lbl+'</div><div class="v">'+val+'</div></div>';
+  $("statgrid").innerHTML =
+      stat(tt("st_round"), stageLabel(result.stage), true)
+    + stat(tt("st_won"), me.w) + stat(tt("st_draw"), me.d) + stat(tt("st_lost"), me.l)
+    + stat(tt("st_gf"), me.gf) + stat(tt("st_ga"), me.ga);
+
+  const tbl = $("standings");
+  tbl.innerHTML = "<tr><th class='l' colspan='2'>"+tt("th_group")+" "+myGroupLetter+"</th><th>"+t("th_w")+"</th><th>"+t("th_d")+"</th><th>"+t("th_l")+"</th><th>"+t("th_gd")+"</th><th>"+t("th_pts")+"</th></tr>";
+  myGroup.forEach((tm, idx) => {
+    const tr = document.createElement("tr");
+    tr.className = (tm.mine ? "mine " : "") + (idx < 2 ? "cl" : "") + (animate ? "" : " in");
+    const ds = tm.gf - tm.ga;
+    tr.innerHTML = "<td class='rank'>"+(idx+1)+"</td><td class='l'>"+esc(tm.mine?teamName:tm.name)+"</td>"
+      + "<td>"+tm.w+"</td><td>"+tm.d+"</td><td>"+tm.l+"</td>"
+      + "<td>"+(ds>0?"+":"")+ds+"</td><td><strong>"+tm.pts+"</strong></td>";
+    tbl.appendChild(tr);
+  });
+  if(animate){
+    let ri=0; const trs=tbl.querySelectorAll("tr");
+    clearInterval(tableTimer);
+    tableTimer = setInterval(()=>{ if(ri>=trs.length){ clearInterval(tableTimer); return; } trs[ri].classList.add("in"); ri++; }, 80);
+  }
+
+  const champ = (result.stage === "champ");
+  let msg = tourneyVerdict(result);
+  if(rig) msg += t("demo_note");
+  $("recordtxt").textContent = me.w + "\u2013" + me.d + "\u2013" + me.l;
+  $("verdicttxt").textContent = msg;
+  $("verdict").classList.toggle("perfect", champ);
+  $("finale").classList.add("show");
+
+  $("sharecard").style.display = rig ? "none" : "";
+  if(!rig && animate){
+    if(sandbox){
+      $("verdicttxt").textContent += t("sandbox_demo");
+    } else {
+      const nieuweBadges = updateRecords(me, result);
+      pushHistory(me, result.placement);
+      if(nieuweBadges.length) $("verdicttxt").textContent += t("new_badge") + nieuweBadges.join(" \u00B7 ");
+    }
+    drawShareCard();
+  }
+  if(animate && champ){
+    sfx.fanfare();
+    confetti(["#F5C518","#FFE584","#FFFFFF","#EE7203"], 240);
+  }
 }
 function verdictMessage(me, myPos){
   if(isPerfect(me))      return t("v_perfect");
@@ -846,25 +993,8 @@ function verdictMessage(me, myPos){
   return t("v_releg", myPos);
 }
 function relocalizeFinale(){
-  if(!lastTeams || !lastMe || !$("finale").classList.contains("show")) return;
-  const teams = lastTeams, me = lastMe, myPos = lastPos;
-  if(replacedClub) $("seasonsub").textContent = t("replaces", teamName, replacedClub.n);
-  const stat = (lbl, val, acc) => '<div class="stat'+(acc ? " accent" : "")+'"><div class="l">'+lbl+'</div><div class="v">'+val+'</div></div>';
-  const saldo = me.gf - me.ga;
-  $("statgrid").innerHTML = stat(t("st_pos"), ord(myPos), true) + stat(t("st_won"), me.w) + stat(t("st_draw"), me.d)
-    + stat(t("st_lost"), me.l) + stat(t("st_gd"), (saldo > 0 ? "+" : "") + saldo) + stat(t("st_pts"), me.pts, true);
-  const tbl = $("standings");
-  tbl.innerHTML = "<tr><th class='l' colspan='2'>" + t("th_club") + "</th><th>" + t("th_w") + "</th><th>" + t("th_d") + "</th><th>" + t("th_l") + "</th><th>" + t("th_gd") + "</th><th>" + t("th_pts") + "</th></tr>";
-  teams.forEach((tm, idx) => {
-    const tr = document.createElement("tr");
-    tr.className = (tm.mine ? "mine " : "") + (idx < 3 ? "cl" : (idx >= 15 ? "deg" : "")) + " in";
-    const ds = tm.gf - tm.ga;
-    tr.innerHTML = "<td class='rank'>" + (idx+1) + "</td><td class='l'>" + esc(tm.name) + "</td>"
-      + "<td>" + tm.w + "</td><td>" + tm.d + "</td><td>" + tm.l + "</td>"
-      + "<td>" + (ds > 0 ? "+" : "") + ds + "</td><td><strong>" + tm.pts + "</strong></td>";
-    tbl.appendChild(tr);
-  });
-  $("verdicttxt").textContent = verdictMessage(me, myPos);
+  if(!lastTourney || !$("finale").classList.contains("show")) return;
+  renderTournamentFinale(lastTourney, false);
 }
 function showFinale(teams, me, myPos, rig){
   phase = "done";
@@ -1008,23 +1138,24 @@ function confetti(colors, count){
 
 /* ================= records (localStorage) ================= */
 const RKEY = SK+"records";
-const ACHIEVEMENTS = ["kampioen","perfect","underdog","tijdmachine","clubliefde","zuinig","machine","fort"];
-let lastOrder = null, lastMe = null, lastPos = 0, lastTeams = null;
+const ACHIEVEMENTS = ["wereldkampioen","zilver","groepswinst","ongeslagen","totaalvoetbal","klasse88","tijdreiziger","ineenkeer"];
+let lastOrder = null, lastMe = null, lastPos = 0, lastTeams = null, lastTourney = null;
 function loadRecords(){
   try { return JSON.parse(localStorage.getItem(RKEY)); } catch(e){ return null; }
 }
-function updateRecords(me, myPos){
+function updateRecords(me, result){
+  const champ = result.stage === "champ";
   const r = loadRecords() || { seasons:0, titles:0, perfects:0, bestPts:-1, bestRec:"", bestTeam:"", bestSeason:"", bestPos:99 };
   r.seasons++;
-  if(myPos === 1) r.titles++;
-  if(isPerfect(me)) r.perfects++;
+  if(champ) r.titles++;
+  if(champ && result.unbeaten) r.perfects++;
   if(me.pts > r.bestPts){
     r.bestPts = me.pts;
     r.bestRec = me.w + "–" + me.d + "–" + me.l;
     r.bestTeam = teamName;
-    r.bestSeason = season;
+    r.bestSeason = stageLabel(result.stage);
   }
-  if(myPos < r.bestPos) r.bestPos = myPos;
+  if(result.placement < r.bestPos) r.bestPos = result.placement;
 
   // badges
   if(!r.ach) r.ach = {};
@@ -1035,16 +1166,16 @@ function updateRecords(me, myPos){
     nieuw.push(achName(id));
   };
   const xi = picks.filter(Boolean);
-  if(myPos === 1) grant("kampioen");
-  if(isPerfect(me)) grant("perfect");
-  if(myPos === 1 && ratings().tot < 70) grant("underdog");
-  if(new Set(xi.map(p => p.season)).size === 11) grant("tijdmachine");
   const perClub = {};
   xi.forEach(p => { perClub[p.clubN] = (perClub[p.clubN] || 0) + 1; });
-  if(Object.keys(perClub).some(k => perClub[k] >= 4)) grant("clubliefde");
-  if(rerolls === MAX_REROLLS) grant("zuinig");
-  if(me.gf >= 100) grant("machine");
-  if(me.ga <= 15) grant("fort");
+  if(champ) grant("wereldkampioen");
+  if(result.stage === "final") grant("zilver");
+  if(result.groupWon) grant("groepswinst");
+  if(champ && result.unbeaten) grant("ongeslagen");
+  if(((perClub["WK 1974"] || 0) + (perClub["WK 1978"] || 0)) >= 3) grant("totaalvoetbal");
+  if((perClub["EK 1988"] || 0) >= 4) grant("klasse88");
+  if(new Set(xi.map(p => p.clubN)).size === 11) grant("tijdreiziger");
+  if(rerolls === MAX_REROLLS) grant("ineenkeer");
 
   try { localStorage.setItem(RKEY, JSON.stringify(r)); } catch(e){}
   renderRecords();
@@ -1242,13 +1373,16 @@ function savePng(){
 /* ---- deelbare link (XI in de URL) ---- */
 function b64e(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
 function b64d(s){ s = s.replace(/-/g, "+").replace(/_/g, "/"); return decodeURIComponent(escape(atob(s))); }
+function stagePlacement(stage){ return ({champ:1, final:2, sf:3, qf:8, r16:16, group:17})[stage] || 17; }
 function teamCode(){
-  if(!lastMe || !lastTeams || !lastOrder) return "";
+  if(!lastTourney) return "";
+  const T = lastTourney, me = T.me;
   const data = {
-    tn: teamName, f: formation, st: stijl, hc: hardcore ? 1 : 0, sea: season, pos: lastPos,
-    me: [lastMe.w, lastMe.d, lastMe.l, lastMe.gf, lastMe.ga, lastMe.pts],
-    ord: lastOrder.map(x => [x.opp.a, x.home ? 1 : 0, x.mg, x.og]),
-    tab: lastTeams.map(tm => [tm.name, tm.w, tm.d, tm.l, tm.gf, tm.ga, tm.pts, tm.mine ? 1 : 0]),
+    tn: teamName, f: formation, st: stijl, hc: hardcore ? 1 : 0,
+    stg: T.result.stage, gl: T.myGroupLetter, ch: T.champion.mine ? null : T.champion.name,
+    me: [me.w, me.d, me.l, me.gf, me.ga, me.pts],
+    ord: T.myMatches.map(x => [x.opp.a, x.mg, x.og, x.round, x.pens ? 1 : 0, x.pmg || 0, x.pog || 0, x.won ? 1 : 0]),
+    grp: T.myGroup.map(tm => [tm.mine ? null : tm.name, tm.w, tm.d, tm.l, tm.gf, tm.ga, tm.pts]),
     p: picks.map(pk => pk ? [pk.pos, pk.name, pk.rating, pk.clubN, pk.clubA, pk.season] : 0)
   };
   return b64e(JSON.stringify(data));
@@ -1263,20 +1397,23 @@ function shareLink(){
 }
 function loadSharedTeam(code){
   let d; try { d = JSON.parse(b64d(code)); } catch(e){ return false; }
-  if(!d || !Array.isArray(d.p) || !Array.isArray(d.tab) || !d.me) return false;
+  if(!d || !Array.isArray(d.p) || !Array.isArray(d.grp) || !d.me) return false;
   teamName = d.tn || t("teamname_ph"); $("teamname").value = teamName;
   if(FORMATIONS_BASE[d.f]) formation = d.f;
   if(STIJLEN.includes(d.st)) stijl = d.st;
   hardcore = !!d.hc;
-  season = d.sea;
+  season = tt("world_cup");
   picks = d.p.map(a => a ? { pos: a[0], name: a[1], rating: a[2], clubN: a[3], clubA: a[4], season: a[5] } : null);
   pickedCount = picks.filter(Boolean).length;
   picked = new Set(); pickedNames = new Set();
   picks.forEach(pk => { if(pk) pickedNames.add(normName(pk.name)); });
-  lastPos = d.pos;
-  lastMe = { name: teamName, mine: true, w: d.me[0], d: d.me[1], l: d.me[2], gf: d.me[3], ga: d.me[4], pts: d.me[5] };
-  lastOrder = d.ord.map(a => ({ opp: { a: a[0] }, home: !!a[1], mg: a[2], og: a[3] }));
-  lastTeams = d.tab.map(a => ({ name: a[0], w: a[1], d: a[2], l: a[3], gf: a[4], ga: a[5], pts: a[6], mine: !!a[7] }));
+  const me = { name: teamName, mine: true, w: d.me[0], d: d.me[1], l: d.me[2], gf: d.me[3], ga: d.me[4], pts: d.me[5] };
+  const myGroup = d.grp.map(a => a[0] === null ? me : { name: a[0], mine: false, w: a[1], d: a[2], l: a[3], gf: a[4], ga: a[5], pts: a[6] });
+  const myMatches = d.ord.map(a => ({ opp: { a: a[0] }, mg: a[1], og: a[2], round: a[3], pens: !!a[4], pmg: a[5], pog: a[6], won: !!a[7] }));
+  const champion = d.ch === null ? me : { name: d.ch, mine: false };
+  const result = { stage: d.stg, placement: stagePlacement(d.stg), unbeaten: (me.l === 0), champion, groupWon: !!(myGroup[0] && myGroup[0].mine) };
+  lastTourney = { me, result, myGroup, myGroupLetter: d.gl, myMatches, champion, rig: false };
+  lastMe = me; lastPos = result.placement; lastOrder = myMatches; lastTeams = myGroup;
   refreshSetup();
   picks.forEach((pk, i) => { if(pk) fillSlot(i, pk); });
   drawBoxScore();
@@ -1293,20 +1430,18 @@ function renderSharedSeason(){
   setPhaseLine("phase_done");
   $("season").classList.add("show");
   $("seasonteam").textContent = teamName;
-  $("seasonyear").textContent = season; $("tableyear").textContent = season;
-  $("seasonsub").textContent = t("shared_season");
+  $("seasonyear").textContent = "🏆";
+  $("tableyear").textContent = tt("th_group") + " " + lastTourney.myGroupLetter;
   const grid = $("fixgrid"); grid.innerHTML = "";
-  lastOrder.forEach((x, i) => {
-    const res = x.mg > x.og ? "W" : (x.mg < x.og ? "V" : "G");
+  lastOrder.forEach((x) => {
     const div = document.createElement("div");
-    div.className = "fix " + res + " in";
-    div.innerHTML = '<div class="top"><span>R' + (i+1) + '</span><span>' + x.opp.a + ' · ' + (x.home ? t("home") : t("away")) + '</span></div><div class="sc">' + x.mg + '–' + x.og + '</div>';
+    div.className = "fix " + fixClass(x) + " in";
+    const sc = x.mg + "–" + x.og + (x.pens ? ' <small>('+x.pmg+"–"+x.pog+" "+tt("pens")+')</small>' : "");
+    div.innerHTML = '<div class="top"><span>'+x.round+'</span><span>'+x.opp.a+'</span></div><div class="sc">'+sc+'</div>';
     grid.appendChild(div);
   });
-  $("recordtxt").textContent = lastMe.w + "–" + lastMe.d + "–" + lastMe.l;
-  $("verdict").classList.toggle("perfect", isPerfect(lastMe));
   $("finale").classList.add("show");
-  relocalizeFinale();
+  renderTournamentFinale(lastTourney, false);
   $("sharecard").style.display = "";
   drawShareCard();
   $("season").scrollIntoView({ behavior: "smooth", block: "start" });

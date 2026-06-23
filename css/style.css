@@ -621,8 +621,34 @@ body.theme-oranje{
   --red:#F3791F;
   --red-dark:#C25613;
   --loss:#E4483B;
+  --gold:#F5C518;
 }
 body.theme-oranje ::-webkit-scrollbar-thumb:hover{background:#FF8C2E}
+
+/* ---------- WK-uitstraling (toernooi) ---------- */
+body.theme-oranje{
+  background-image:radial-gradient(130% 70% at 50% -15%, rgba(243,121,31,.18), transparent 62%);
+  background-attachment:fixed;
+}
+body.theme-oranje .topbar{ background:linear-gradient(90deg, var(--red) 0%, var(--gold) 100%); height:6px; }
+/* eigen logo-emblem i.p.v. de schuine tab */
+body.theme-oranje .logo.wclogo{
+  background:linear-gradient(135deg,#F3791F,#F7A81E);
+  clip-path:none;
+  border-radius:13px;
+  border:2px solid var(--gold);
+  box-shadow:0 0 0 3px rgba(245,197,24,.16), 0 7px 18px rgba(0,0,0,.45);
+  padding:3px 15px 5px;
+  display:inline-flex; align-items:center; gap:7px;
+  color:#1c1305;
+  text-shadow:0 1px 0 rgba(255,255,255,.18);
+}
+body.theme-oranje .logo.wclogo .wcstar{ color:#fff; font-size:.6em; line-height:1; filter:drop-shadow(0 1px 1px rgba(0,0,0,.3)); }
+/* gouden badges en kampioensverdict */
+body.theme-oranje .badge.earned{ border-color:var(--gold); color:var(--gold); box-shadow:0 0 12px rgba(245,197,24,.22); }
+body.theme-oranje .verdict.perfect{ background:linear-gradient(135deg,var(--gold),#E2A912); border-left-color:#fff; }
+body.theme-oranje .verdict.perfect .record,
+body.theme-oranje .verdict.perfect .msg{ color:#231905; }
 
 /* ================= v4: hardcore, spelerskeuze, share-kaart, veld ================= */
 .pchoice .usedtag{

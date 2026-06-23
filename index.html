@@ -18,49 +18,78 @@
 window.BUILD_CONFIG = {
   store: "oranje_",
   brand: "1–3",
+  defaultName: "Oranje",
   cardSeason: false,
   cardNavy: "#16130D", cardNavy2: "#211C13", cardAccent: "#F3791F", cardMuted: "#B6A689",
   kit: { p:"solid", c:["#EE7203","#FFFFFF"] },
   i18n: {
     nl: {
-      apptitle:"De Oranje<br>draft challenge",
-      tagline:"1× goud · 3× zilver",
-      final_table:"Eindstand toernooi",
+      apptitle:"Oranje<br>op het WK",
+      tagline:"Draft · Groepsfase · Knock-out",
+      teamname_ph:"Oranje",
       phase_setup:"Fase: opstelling kiezen",
+      phase_season:"Fase: toernooi",
+      season_of:"Het WK van",
+      simulate:"Speel het WK",
+      ready_hint:tn=>tn+" staat. Speel het WK via de box score.",
+      card_sub:"DE ORANJE-WK-CHALLENGE",
+      card_season:"TOERNOOI",
       season_label:s=>"Oranje-selectie",
       hint_setup:"Rol elke ronde een Oranje-selectie uit een willekeurige eindronde, kies een speler en zet hem op een oplichtende positie.",
-      seasons_label:"Periode", clubs_label:"Eindrondes",
-      all_clubs:"Alle eindrondes",
-      card_sub:"DE ORANJE DRAFT CHALLENGE",
-      db_search:"Zoek speler in alle eindrondes...",
-      footer:"Onofficieel fanproject, niet gelieerd aan de KNVB. Selecties zijn gecureerde kernselecties van Oranje bij elke EK- en WK-eindronde sinds WK 1974, bij benadering.",
-      replaces:(tn,c)=>tn+" neemt de plek in van "+c,
       hint_draft:tn=>tn+" draft: elke ronde een Oranje-selectie uit een willekeurige eindronde. Max 3 rerolls.",
-      help_html:"<p><b>Doel:</b> bouw je ultieme Oranje-elftal en jaag op het perfecte seizoen: alles winnen, niets verliezen.</p>"
+      seasons_label:"Periode", clubs_label:"Eindrondes", all_clubs:"Alle eindrondes",
+      db_search:"Zoek speler in alle eindrondes...",
+      rec_seasons:"Toernooien gespeeld", rec_titles:"Wereldtitels", rec_perfect:"Ongeslagen titels", rec_finish:"Beste resultaat",
+      footer:"Onofficieel fanproject, niet gelieerd aan de KNVB of FIFA. Selecties zijn gecureerde kernselecties van Oranje bij elke EK- en WK-eindronde sinds WK 1974, bij benadering.",
+      help_html:"<p><b>Doel:</b> draft je ultieme Oranje-elftal uit de hele historie en word eindelijk wereldkampioen.</p>"
         + "<p><b>1. Stel in.</b> Kies een teamnaam, formatie en speelstijl. De speelstijl (verdedigend / gebalanceerd / aanvallend) verschuift je linies en weegt mee in de uitslagen.</p>"
-        + "<p><b>2. Draft.</b> 11 rondes lang rol je een willekeurige Oranje-eindronde (EK/WK sinds 1974). Kies een speler uit die selectie en zet hem op een passende positie. Max 3 rerolls per draft. Met het <b>draftfilter</b> beperk je je tot bepaalde eindrondes.</p>"
-        + "<p><b>3. Simuleren.</b> Je elftal speelt een heel seizoen tegen alle historische Oranje-selecties. De ratings bepalen de kansen; daarna volgt de eindstand.</p>"
-        + "<p><b>Records &amp; badges</b> worden lokaal bewaard. Gebruik <b>\u{1F4CB}</b> voor de spelersdatabase, de <b>taalknop</b> om te wisselen tussen Nederlands en Engels, en <b>\u{1F50A}</b> voor geluid.</p>"
+        + "<p><b>2. Draft.</b> 11 rondes lang rol je een willekeurige Oranje-eindronde (EK/WK sinds 1974, t/m WK 2026). Kies een speler uit die selectie en zet hem op een passende positie. Max 3 rerolls. Met het <b>eindrondes</b>-filter beperk je je tot bepaalde toernooien.</p>"
+        + "<p><b>3. Speel het WK.</b> Je elftal gaat naar een groot eindtoernooi: eerst de groepsfase (poule van 4), dan de knock-out — achtste, kwart, halve finale en finale — tegen 31 andere landen. Verlies je de finale? Zilver. Alweer.</p>"
+        + "<p><b>Records &amp; badges</b> worden lokaal bewaard. Gebruik <b>\u{1F4CB}</b> voor de spelersdatabase, de <b>taalknop</b> voor NL/EN en <b>\u{1F50A}</b> voor geluid.</p>",
+      ach:{
+        wereldkampioen:["Wereldkampioen","Win het WK"],
+        zilver:["Zilver, alweer","Verlies de finale"],
+        groepswinst:["Groepswinst","Win je groep in de groepsfase"],
+        ongeslagen:["Onverslaanbaar","Word wereldkampioen zonder te verliezen"],
+        totaalvoetbal:["Totaalvoetbal","Stel 3+ spelers op uit WK 1974 en 1978"],
+        klasse88:["De klasse van '88","Stel 4+ spelers op uit EK 1988"],
+        tijdreiziger:["Tijdreiziger","Spelers uit 11 verschillende eindrondes"],
+        ineenkeer:["In één keer","Voltooi de draft zonder rerolls"]
+      }
     },
     en: {
-      apptitle:"The Oranje<br>draft challenge",
-      tagline:"1× gold · 3× silver",
-      final_table:"Tournament table",
+      apptitle:"Oranje<br>at the World Cup",
+      tagline:"Draft · Groups · Knockout",
+      teamname_ph:"Oranje",
       phase_setup:"Phase: choose line-up",
+      phase_season:"Phase: tournament",
+      season_of:"The World Cup of",
+      simulate:"Play the World Cup",
+      ready_hint:tn=>tn+" is set. Play the World Cup via the box score.",
+      card_sub:"THE ORANJE WORLD CUP",
+      card_season:"TOURNAMENT",
       season_label:s=>"Netherlands squad",
       hint_setup:"Each round, roll a Dutch squad from a random tournament, pick a player and place him on a highlighted position.",
-      seasons_label:"Era", clubs_label:"Tournaments",
-      all_clubs:"All tournaments",
-      card_sub:"THE ORANJE DRAFT CHALLENGE",
-      db_search:"Search a player across all tournaments...",
-      footer:"Unofficial fan project, not affiliated with the KNVB. Squads are curated core selections of the Netherlands at every Euro and World Cup since the 1974 World Cup, approximate.",
-      replaces:(tn,c)=>tn+" takes the place of "+c,
       hint_draft:tn=>tn+" draft: each round a Dutch squad from a random tournament. Max 3 rerolls.",
-      help_html:"<p><b>Goal:</b> build your ultimate Netherlands XI and chase the perfect season: win everything, lose nothing.</p>"
-        + "<p><b>1. Set up.</b> Pick a team name, formation and play style. The play style (defensive / balanced / attacking) shifts your lines and weighs into the results.</p>"
-        + "<p><b>2. Draft.</b> For 11 rounds you roll a random Dutch tournament squad (Euro/World Cup since 1974). Pick a player from that squad and place him on a matching position. Max 3 rerolls per draft. Use the <b>draft filter</b> to limit yourself to certain tournaments.</p>"
-        + "<p><b>3. Simulate.</b> Your XI plays a full season against every historic Netherlands squad. Ratings drive the odds; then comes the final table.</p>"
-        + "<p><b>Records &amp; badges</b> are stored locally. Use <b>\u{1F4CB}</b> for the player database, the <b>language button</b> to switch between Dutch and English, and <b>\u{1F50A}</b> to toggle sound.</p>"
+      seasons_label:"Era", clubs_label:"Tournaments", all_clubs:"All tournaments",
+      db_search:"Search a player across all tournaments...",
+      rec_seasons:"Tournaments played", rec_titles:"World titles", rec_perfect:"Unbeaten titles", rec_finish:"Best result",
+      footer:"Unofficial fan project, not affiliated with the KNVB or FIFA. Squads are curated core selections of the Netherlands at every Euro and World Cup since the 1974 World Cup, approximate.",
+      help_html:"<p><b>Goal:</b> draft your ultimate all-time Netherlands XI and finally become world champions.</p>"
+        + "<p><b>1. Set up.</b> Pick a team name, formation and play style. The play style shifts your lines and weighs into the results.</p>"
+        + "<p><b>2. Draft.</b> For 11 rounds you roll a random Dutch tournament squad (Euro/World Cup since 1974, up to the 2026 World Cup). Pick a player and place him on a matching position. Max 3 rerolls. Use the <b>tournaments</b> filter to limit yourself.</p>"
+        + "<p><b>3. Play the World Cup.</b> Your XI enters a major tournament: a group stage (group of 4), then the knockouts — last 16, quarter, semi and final — against 31 other nations. Lose the final? Silver. Again.</p>"
+        + "<p><b>Records &amp; badges</b> are stored locally. Use <b>\u{1F4CB}</b> for the player database, the <b>language button</b> for NL/EN and <b>\u{1F50A}</b> for sound.</p>",
+      ach:{
+        wereldkampioen:["World champion","Win the World Cup"],
+        zilver:["Silver, again","Lose the final"],
+        groepswinst:["Group winner","Win your group in the group stage"],
+        ongeslagen:["Unbeatable","Win the World Cup without losing a game"],
+        totaalvoetbal:["Total Football","Field 3+ players from the 1974 & 1978 squads"],
+        klasse88:["Class of '88","Field 4+ players from Euro 1988"],
+        tijdreiziger:["Time traveller","Players from 11 different tournaments"],
+        ineenkeer:["First time right","Finish the draft without rerolls"]
+      }
     }
   }
 };
@@ -70,10 +99,10 @@ window.BUILD_CONFIG = {
 
 <div class="topbar"></div>
 <header class="anim-fadeup">
-  <div class="logo disp">1–3</div>
+  <div class="logo disp wclogo"><span class="wcstar">★</span>1–3</div>
   <div class="wordmark">
-    <h1 data-i18n-html="apptitle">De Oranje<br>draft challenge</h1>
-    <p class="eyebrow" data-i18n="tagline">Rol · Kies · Simuleer</p>
+    <h1 data-i18n-html="apptitle">Oranje<br>op het WK</h1>
+    <p class="eyebrow" data-i18n="tagline">Draft · Groepsfase · Knock-out</p>
   </div>
   <div class="header-status">
     <p class="eyebrow" id="configline">—</p>
