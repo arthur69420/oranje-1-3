@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1–3 · De Oranje draft challenge</title>
+<meta name="description" content="Rol eindrondes, stel je all-time Oranje-elftal samen uit de EK- en WK-selecties sinds 1974 en simuleer een seizoen tegen de historische teams. 1× goud, 3× zilver.">
+<meta name="theme-color" content="#16130D">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>
+/* ===== Oranje-build config: eigen opslag, branding, shirt en teksten ===== */
+window.BUILD_CONFIG = {
+  store: "oranje_",
+  brand: "1–3",
+  cardSeason: false,
+  cardNavy: "#16130D", cardNavy2: "#211C13", cardAccent: "#F3791F", cardMuted: "#B6A689",
+  kit: { p:"solid", c:["#EE7203","#FFFFFF"] },
+  i18n: {
+    nl: {
+      apptitle:"De Oranje<br>draft challenge",
+      tagline:"1× goud · 3× zilver",
+      final_table:"Eindstand toernooi",
+      phase_setup:"Fase: opstelling kiezen",
+      season_label:s=>"Oranje-selectie",
+      hint_setup:"Rol elke ronde een Oranje-selectie uit een willekeurige eindronde, kies een speler en zet hem op een oplichtende positie.",
+      seasons_label:"Periode", clubs_label:"Eindrondes",
+      all_clubs:"Alle eindrondes",
+      card_sub:"DE ORANJE DRAFT CHALLENGE",
+      db_search:"Zoek speler in alle eindrondes...",
+      footer:"Onofficieel fanproject, niet gelieerd aan de KNVB. Selecties zijn gecureerde kernselecties van Oranje bij elke EK- en WK-eindronde sinds WK 1974, bij benadering.",
+      replaces:(tn,c)=>tn+" neemt de plek in van "+c,
+      hint_draft:tn=>tn+" draft: elke ronde een Oranje-selectie uit een willekeurige eindronde. Max 3 rerolls.",
+      help_html:"<p><b>Doel:</b> bouw je ultieme Oranje-elftal en jaag op het perfecte seizoen: alles winnen, niets verliezen.</p>"
+        + "<p><b>1. Stel in.</b> Kies een teamnaam, formatie en speelstijl. De speelstijl (verdedigend / gebalanceerd / aanvallend) verschuift je linies en weegt mee in de uitslagen.</p>"
+        + "<p><b>2. Draft.</b> 11 rondes lang rol je een willekeurige Oranje-eindronde (EK/WK sinds 1974). Kies een speler uit die selectie en zet hem op een passende positie. Max 3 rerolls per draft. Met het <b>draftfilter</b> beperk je je tot bepaalde eindrondes.</p>"
+        + "<p><b>3. Simuleren.</b> Je elftal speelt een heel seizoen tegen alle historische Oranje-selecties. De ratings bepalen de kansen; daarna volgt de eindstand.</p>"
+        + "<p><b>Records &amp; badges</b> worden lokaal bewaard. Gebruik <b>\u{1F4CB}</b> voor de spelersdatabase, de <b>taalknop</b> om te wisselen tussen Nederlands en Engels, en <b>\u{1F50A}</b> voor geluid.</p>"
+    },
+    en: {
+      apptitle:"The Oranje<br>draft challenge",
+      tagline:"1× gold · 3× silver",
+      final_table:"Tournament table",
+      phase_setup:"Phase: choose line-up",
+      season_label:s=>"Netherlands squad",
+      hint_setup:"Each round, roll a Dutch squad from a random tournament, pick a player and place him on a highlighted position.",
+      seasons_label:"Era", clubs_label:"Tournaments",
+      all_clubs:"All tournaments",
+      card_sub:"THE ORANJE DRAFT CHALLENGE",
+      db_search:"Search a player across all tournaments...",
+      footer:"Unofficial fan project, not affiliated with the KNVB. Squads are curated core selections of the Netherlands at every Euro and World Cup since the 1974 World Cup, approximate.",
+      replaces:(tn,c)=>tn+" takes the place of "+c,
+      hint_draft:tn=>tn+" draft: each round a Dutch squad from a random tournament. Max 3 rerolls.",
+      help_html:"<p><b>Goal:</b> build your ultimate Netherlands XI and chase the perfect season: win everything, lose nothing.</p>"
+        + "<p><b>1. Set up.</b> Pick a team name, formation and play style. The play style (defensive / balanced / attacking) shifts your lines and weighs into the results.</p>"
+        + "<p><b>2. Draft.</b> For 11 rounds you roll a random Dutch tournament squad (Euro/World Cup since 1974). Pick a player from that squad and place him on a matching position. Max 3 rerolls per draft. Use the <b>draft filter</b> to limit yourself to certain tournaments.</p>"
+        + "<p><b>3. Simulate.</b> Your XI plays a full season against every historic Netherlands squad. Ratings drive the odds; then comes the final table.</p>"
+        + "<p><b>Records &amp; badges</b> are stored locally. Use <b>\u{1F4CB}</b> for the player database, the <b>language button</b> to switch between Dutch and English, and <b>\u{1F50A}</b> to toggle sound.</p>"
+    }
+  }
+};
+</script>
+</head>
+<body class="theme-oranje">
+
+<div class="topbar"></div>
+<header class="anim-fadeup">
+  <div class="logo disp">1–3</div>
+  <div class="wordmark">
+    <h1 data-i18n-html="apptitle">De Oranje<br>draft challenge</h1>
+    <p class="eyebrow" data-i18n="tagline">Rol · Kies · Simuleer</p>
+  </div>
+  <div class="header-status">
+    <p class="eyebrow" id="configline">—</p>
+    <p class="eyebrow" id="phaseline"></p>
+  </div>
+  <button class="mutebtn" id="helpbtn" data-i18n-title="help_title">?</button>
+  <button class="mutebtn" id="langbtn" title="Language">EN</button>
+  <button class="mutebtn" id="dbbtn" data-i18n-title="db_title">&#128203;</button>
+  <button class="mutebtn" id="mutebtn" data-i18n-title="sound_title">&#128266;</button>
+</header>
+
+<!-- uitleg -->
+<div class="dbmodal" id="helpmodal">
+  <div class="dbcard helpcard">
+    <div class="dbhead">
+      <div class="dbtitle">
+        <h2 class="disp" data-i18n="help_heading">Hoe werkt het?</h2>
+      </div>
+      <button class="smallbtn" id="helpclose" data-i18n="close">Sluiten &#10005;</button>
+    </div>
+    <div class="helpbody" id="helpbody"></div>
+  </div>
+</div>
+
+<!-- databaseviewer -->
+<div class="dbmodal" id="dbmodal">
+  <div class="dbcard">
+    <div class="dbhead">
+      <div class="dbtitle">
+        <h2 class="disp" data-i18n="db_heading">Spelersdatabase</h2>
+        <p class="eyebrow" id="dbstats">&mdash;</p>
+      </div>
+      <input type="text" id="dbsearch" data-i18n-ph="db_search" placeholder="Zoek speler in alle eindrondes..." autocomplete="off">
+      <select id="dbclubsel"></select>
+      <select id="dbseason"></select>
+      <button class="smallbtn" id="dbclose" data-i18n="close">Sluiten &#10005;</button>
+    </div>
+    <div class="dbgrid" id="dbgrid"></div>
+  </div>
+</div>
+
+<!-- teamgeschiedenis -->
+<div class="dbmodal" id="histmodal">
+  <div class="dbcard">
+    <div class="dbhead">
+      <div class="dbtitle">
+        <h2 class="disp" data-i18n="hist_heading">Jouw teams</h2>
+        <p class="eyebrow" data-i18n="hist_sub">De laatste 10 gespeelde seizoenen</p>
+      </div>
+      <button class="smallbtn" id="histclose" data-i18n="close">Sluiten &#10005;</button>
+    </div>
+    <div class="dbgrid" id="histgrid"></div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- instellingen -->
+  <div class="col anim-fadeup" style="animation-delay:.05s">
+    <div class="panel" id="setuppanel">
+      <h2 data-i18n="teamname">Teamnaam</h2>
+      <input type="text" id="teamname" maxlength="24" data-i18n-ph="teamname_ph" placeholder="Mijn XI" autocomplete="off">
+      <h2 data-i18n="formation">Formatie</h2>
+      <div class="optgrid" id="formaties"></div>
+      <h2 data-i18n="playstyle">Speelstijl</h2>
+      <div class="optgrid" id="stijlen"></div>
+      <h2 data-i18n="mode">Modus</h2>
+      <div class="optgrid" id="modes"></div>
+      <p class="note" data-i18n="mode_note">Hardcore verbergt de ratings.</p>
+      <h2 data-i18n="draft_filter">Draftfilter</h2>
+      <p class="eyebrow flbl" data-i18n="seasons_label" style="display:none">Periode</p>
+      <div class="msel" style="display:none">
+        <button class="mselbtn" id="seasonbtn" type="button"><span id="seasonsum">Alle</span><span class="msarrow">&#9662;</span></button>
+        <div class="msmenu" id="seasonmenu"></div>
+      </div>
+      <p class="eyebrow flbl" data-i18n="clubs_label">Eindrondes</p>
+      <div class="msel">
+        <button class="mselbtn" id="clubbtn" type="button"><span id="clubsum">Alle eindrondes</span><span class="msarrow">&#9662;</span></button>
+        <div class="msmenu" id="clubmenu"></div>
+      </div>
+      <label class="sandtoggle" id="sandtoggle"><input type="checkbox" id="sandcheck"><span data-i18n="sandbox_toggle">Sandbox: kies zelf je elftal</span></label>
+    </div>
+    <div class="panel recpanel" id="recordspanel" style="display:none">
+      <h2 data-i18n="your_records">Jouw records</h2>
+      <div id="recrows"></div>
+      <h2 data-i18n="badges">Badges</h2>
+      <div class="achgrid" id="achgrid"></div>
+      <button class="smallbtn" id="histbtn" data-i18n="view_teams" style="width:100%;margin-top:14px">Bekijk je teams</button>
+    </div>
+  </div>
+
+  <!-- veld -->
+  <div class="col anim-fadeup" style="animation-delay:.1s">
+    <div class="pitchwrap">
+      <div class="placebar" id="placebar">
+        <div class="pb-info">
+          <span class="eyebrow" data-i18n="pick_position">Kies een positie op het veld</span>
+          <span class="pb-player" id="pbplayer"></span>
+        </div>
+        <button class="smallbtn" id="pbback" data-i18n="back_squad">&#8592; Terug naar selectie</button>
+      </div>
+      <div class="pitch" id="pitch">
+        <div class="pl pl-mid"></div>
+        <div class="pl pl-circle"></div>
+        <div class="pl pl-spot"></div>
+        <div class="pl pl-box-t"></div><div class="pl pl-goal-t"></div>
+        <div class="pl pl-box-b"></div><div class="pl pl-goal-b"></div>
+      </div>
+      <div class="overlay" id="overlay">
+        <div class="ovcard">
+          <p class="eyebrow" id="ovstep">Ronde 1 van 11</p>
+          <div class="spinshirt" id="spinshirt"></div>
+          <div class="spinname" id="spinname">&nbsp;</div>
+          <p class="eyebrow needline" id="ovneed"></p>
+          <div id="choices"></div>
+          <button class="rerollbtn" id="rerollbtn"><span data-i18n="reroll">Opnieuw rollen</span> <span id="rerollcount">(3)</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- box score -->
+  <div class="col col-right anim-fadeup" style="animation-delay:.15s">
+    <div class="bs-head">
+      <span class="eyebrow" data-i18n="box_score">Box score</span>
+      <span class="count" id="bscount">0/11</span>
+    </div>
+    <div class="legend">
+      <span class="att"><i></i><span data-i18n="attack">Aanval</span></span>
+      <span class="def"><i></i><span data-i18n="defense">Verdediging</span></span>
+    </div>
+    <div id="bsrows"></div>
+    <div class="teamstats" id="teamstats">
+      <div class="bar att"><div class="lbl"><span data-i18n="attack">Aanval</span><span id="attval">—</span></div><div class="track"><div class="fill" id="attbar"></div></div></div>
+      <div class="bar def"><div class="lbl"><span data-i18n="defense">Verdediging</span><span id="defval">—</span></div><div class="track"><div class="fill" id="defbar"></div></div></div>
+      <div class="bar tot"><div class="lbl"><span data-i18n="team_rating">Teamrating</span><span id="totval">—</span></div><div class="track"><div class="fill" id="totbar"></div></div></div>
+    </div>
+    <div class="hint" id="hint"></div>
+    <button class="rollbtn" id="rollbtn"></button>
+    <button class="smallbtn" id="resetbtn" data-i18n="restart" style="display:none;width:100%;margin-top:12px">Opnieuw beginnen</button>
+    <button class="simbtn disp" id="simbtn" data-i18n="simulate">Simuleer het seizoen</button>
+  </div>
+</div>
+
+<section id="season">
+  <div class="head">
+    <h2><span data-i18n="season_of">Het seizoen van</span> <em id="seasonteam"></em> <span class="yr" id="seasonyear"></span></h2>
+    <p class="eyebrow" id="seasonsub"></p>
+  </div>
+  <div class="fixgrid" id="fixgrid"></div>
+  <div id="finale">
+    <div class="statgrid" id="statgrid"></div>
+    <div class="resultwrap">
+      <div class="tablecard">
+        <p class="eyebrow" style="margin-bottom:10px"><span data-i18n="final_table">Eindstand toernooi</span> <span id="tableyear"></span></p>
+        <table class="standings" id="standings"></table>
+      </div>
+      <div class="verdictcol">
+        <div class="verdict" id="verdict">
+          <span class="record" id="recordtxt"></span>
+          <span class="msg" id="verdicttxt"></span>
+        </div>
+        <div class="seasonactions">
+          <button class="smallbtn" id="againbtn" data-i18n="draft_again">Opnieuw draften</button>
+        </div>
+        <div class="sharecard" id="sharecard">
+          <p class="eyebrow" data-i18n="share_heading">Deel je seizoen</p>
+          <canvas id="sharecanvas" width="1080" height="1350" aria-label="Seizoenskaart"></canvas>
+          <div class="shareactions">
+            <button class="smallbtn primary" id="shareimgbtn" data-i18n="share_image">Delen</button>
+            <button class="smallbtn" id="savepngbtn" data-i18n="save_png">Bewaar afbeelding</button>
+            <button class="smallbtn" id="linkbtn" data-i18n="share_link">Kopieer link</button>
+            <button class="smallbtn" id="sharebtn" data-i18n="share_copy">Kopieer tekst</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span class="tag disp">1–3</span>
+  <span data-i18n="footer">Onofficieel fanproject, niet gelieerd aan de KNVB. Selecties zijn gecureerde kernselecties van Oranje bij elke EK- en WK-eindronde sinds WK 1974, bij benadering.</span>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
