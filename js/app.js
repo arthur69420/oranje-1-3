@@ -87,7 +87,7 @@ const KITS = {
   ALM:{p:"solid",   c:["#D50000","#1A1A1A"]},
   TEL:{p:"telstar", c:["#FFFFFF","#E40428","#0095D8"]}
 };
-function clubKit(abbr){ return KITS[abbr] || CFG.kit || {p:"band", c:["#16285A","#FFFFFF"]}; }
+function clubKit(abbr){ return KITS[abbr] || (CFG.kits && CFG.kits[abbr]) || CFG.kit || {p:"band", c:["#16285A","#FFFFFF"]}; }
 function clubColors(abbr){ const c = clubKit(abbr).c; return [c[0], c[1]||c[0]]; }
 
 let _kitSeq = 0;
@@ -139,6 +139,31 @@ function shirtSVG(abbr, size){
         + '<rect x="10.5" y="32.1" width="9.5" height="2" fill="'+c[1]+'"/>'
         + '<rect x="20" y="32.1" width="9.5" height="2" fill="'+c[2]+'"/>';
       break;
+    case "nl": { // Oranje-shirt: kraag, mouwen, adidas-schouderstrepen, zijpanelen, tonaal patroon
+      if(k.geo === "chevron")
+        inner += [6,14,22,30].map(y=>'<path d="M2 '+(y+3)+' L20 '+y+' L38 '+(y+3)+'" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="1.3"/>').join("");
+      else if(k.geo === "diag")
+        inner += '<polygon points="20,0 40,0 40,36 33,36" fill="rgba(0,0,0,.07)"/><polygon points="20,0 20,36 8,36" fill="rgba(0,0,0,.05)"/>';
+      else if(k.geo === "tonal")
+        inner += '<polygon points="0,9 40,9 40,36 0,36" fill="rgba(0,0,0,.06)"/>';
+      if(k.side)
+        inner += '<rect x="10.5" y="12.5" width="1.7" height="21.5" fill="'+k.side+'"/><rect x="27.8" y="12.5" width="1.7" height="21.5" fill="'+k.side+'"/>';
+      if(k.stripes){
+        const sc = k.stripes.c, offs = k.stripes.n === 1 ? [0] : [-1,0,1];
+        offs.forEach(o=>{
+          inner += '<line x1="'+(12+0.48*o)+'" y1="'+(2.4+0.875*o)+'" x2="'+(3.4+0.48*o)+'" y2="'+(7.1+0.875*o)+'" stroke="'+sc+'" stroke-width="0.7"/>'
+                 + '<line x1="'+(28-0.48*o)+'" y1="'+(2.4+0.875*o)+'" x2="'+(36.6-0.48*o)+'" y2="'+(7.1+0.875*o)+'" stroke="'+sc+'" stroke-width="0.7"/>';
+        });
+      }
+      if(k.cuff)
+        inner += '<line x1="6.5" y1="15" x2="10.5" y2="12.5" stroke="'+k.cuff+'" stroke-width="1.8"/>'
+               + '<line x1="33.5" y1="15" x2="29.5" y2="12.5" stroke="'+k.cuff+'" stroke-width="1.8"/>';
+      if(k.collar)
+        inner += '<path d="M13 1 Q20 6.5 27 1" fill="none" stroke="'+k.collar+'" stroke-width="1.8"/>';
+      if(k.hem)
+        inner += '<rect x="10.5" y="32.1" width="19" height="1.8" fill="'+k.hem+'"/>';
+      break;
+    }
   }
   return '<svg class="shirt" width="'+size+'" height="'+Math.round(size*0.9)+'" viewBox="0 0 40 36" aria-hidden="true">'
     + '<defs><clipPath id="'+id+'"><path d="'+BODY+'"/></clipPath></defs>'
@@ -923,8 +948,9 @@ function simulate(rig){
       + '<div class="sc">'+sc+'</div>';
     grid.appendChild(div);
     requestAnimationFrame(() => div.classList.add("in"));
+    sfx.tick(i + 1);
     i++;
-  }, 220);
+  }, 720);
 }
 function stageLabel(stage){ return tt("stg_"+stage); }
 function tourneyVerdict(result){
