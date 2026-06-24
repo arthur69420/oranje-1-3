@@ -611,7 +611,7 @@ button{touch-action:manipulation}
 /* ---------- Oranje-thema (scoped: alleen op <body class="theme-oranje">) ----------
    Donkere, warme basis met fel oranje accent i.p.v. rood. Resultaatkleuren
    (winst groen / gelijk grijs / verlies rood) blijven leesbaar. */
-body.theme-oranje{
+.theme-oranje{
   --navy:#16130D;
   --navy-2:#211C13;
   --navy-3:#30281A;
@@ -623,7 +623,9 @@ body.theme-oranje{
   --loss:#E4483B;
   --gold:#F5C518;
 }
-body.theme-oranje ::-webkit-scrollbar-thumb:hover{background:#FF8C2E}
+.theme-oranje ::-webkit-scrollbar-thumb{background:var(--red);border-color:var(--navy-2)}
+.theme-oranje ::-webkit-scrollbar-thumb:hover{background:#FF8C2E}
+.theme-oranje{scrollbar-color:var(--red) var(--navy-2)}
 
 /* ---------- WK-uitstraling (toernooi) ---------- */
 body.theme-oranje{
@@ -649,6 +651,18 @@ body.theme-oranje .badge.earned{ border-color:var(--gold); color:var(--gold); bo
 body.theme-oranje .verdict.perfect{ background:linear-gradient(135deg,var(--gold),#E2A912); border-left-color:#fff; }
 body.theme-oranje .verdict.perfect .record,
 body.theme-oranje .verdict.perfect .msg{ color:#231905; }
+/* lange ronde-namen (bv. "Wereldkampioen") netjes in het statblokje */
+.theme-oranje .stat .v{ font-size:clamp(16px, 4.6vw, 26px); line-height:1.05; overflow-wrap:anywhere; }
+/* knock-outpad bij de eindstand */
+.kopath{ margin-top:14px; }
+.kopath-h{ margin-bottom:8px; }
+.korow{ display:flex; align-items:center; gap:10px; padding:7px 2px; border-top:1px solid var(--line); font-size:13.5px; }
+.korow .kr{ font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); flex:1 1 auto; }
+.korow .ko{ font-weight:700; flex:none; }
+.korow .ks{ font-family:"IBM Plex Mono",monospace; font-weight:600; flex:none; }
+.korow .pens{ color:var(--muted); font-weight:500; }
+.korow.W .ks{ color:var(--win); }
+.korow.V .ks{ color:var(--loss); }
 
 /* ================= v4: hardcore, spelerskeuze, share-kaart, veld ================= */
 .pchoice .usedtag{

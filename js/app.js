@@ -7,7 +7,7 @@ const CFG = (typeof window !== "undefined" && window.BUILD_CONFIG) || {};
 const SK = CFG.store || "e3400_";
 const BRAND = CFG.brand || "34–0–0";
 const isPerfect = m => !!m && m.d === 0 && m.l === 0 && m.w > 0;
-function clubTag(a, s){ return a + (CFG.cardSeason === false ? "" : " " + String(s).slice(2)); }
+function clubTag(a, s){ return CFG.tagFmt ? CFG.tagFmt(a, s) : a + (CFG.cardSeason === false ? "" : " " + String(s).slice(2)); }
 
 /* ================= configuratie ================= */
 /* Balanced-basis per formatie; de speelstijl past hieronder de centrale
@@ -496,7 +496,7 @@ function fillSlot(i, pick){
   const d = $("slot"+i);
   d.className = "slot filled";
   d.innerHTML = shirtSVG(pick.clubA, 30)
-    + '<span class="nm">'+esc(pick.name)+'</span><span class="meta">'+pick.clubA+' \u00B7 '+pick.pos+'<span class="r"> \u00B7 '+pick.rating+'</span></span>';
+    + '<span class="nm">'+esc(pick.name)+'</span><span class="meta">'+clubTag(pick.clubA, pick.season)+' \u00B7 '+pick.pos+'<span class="r"> \u00B7 '+pick.rating+'</span></span>';
 }
 
 /* ================= box score ================= */
@@ -799,9 +799,9 @@ function playMatch(h, a, mods){
 const TT = {
   nl: {
     world_cup:"WK", group:"Groep", th_group:"Groep", pens:"n.s.",
-    r16:"Achtste", qf:"Kwartfinale", sf:"Halve finale", final:"Finale", world_champ:"Wereldkampioen",
+    r16:"Achtste", qf:"Kwartfinale", sf:"Halve finale", final:"Finale", world_champ:"Wereldkampioen", ko_path:"Knock-outfase",
     st_round:"Ronde", st_won:"Winst", st_draw:"Gelijk", st_lost:"Verlies", st_gf:"Goals voor", st_ga:"Goals tegen",
-    stg_champ:"Wereldkampioen", stg_final:"Finale", stg_sf:"Halve finale", stg_qf:"Kwartfinale", stg_r16:"Achtste finale", stg_group:"Groepsfase",
+    stg_champ:"Winnaar", stg_final:"Finale", stg_sf:"Halve finale", stg_qf:"Kwartfinale", stg_r16:"Achtste finale", stg_group:"Groepsfase",
     v_champ:tn=>"WERELDKAMPIOEN! "+tn+" heeft de beker eindelijk te pakken.",
     v_champ_unbeaten:tn=>"WERELDKAMPIOEN — en ongeslagen. "+tn+" is onsterfelijk.",
     v_runner:"Verloren finale. Zilver — alweer. Het 1–3-verhaal in het kort.",
@@ -813,9 +813,9 @@ const TT = {
   },
   en: {
     world_cup:"WC", group:"Group", th_group:"Group", pens:"pens",
-    r16:"Last 16", qf:"Quarter-final", sf:"Semi-final", final:"Final", world_champ:"World champion",
+    r16:"Last 16", qf:"Quarter-final", sf:"Semi-final", final:"Final", world_champ:"World champion", ko_path:"Knockout stage",
     st_round:"Round", st_won:"Won", st_draw:"Drawn", st_lost:"Lost", st_gf:"Goals for", st_ga:"Goals against",
-    stg_champ:"World champion", stg_final:"Final", stg_sf:"Semi-final", stg_qf:"Quarter-final", stg_r16:"Last 16", stg_group:"Group stage",
+    stg_champ:"Winner", stg_final:"Final", stg_sf:"Semi-final", stg_qf:"Quarter-final", stg_r16:"Last 16", stg_group:"Group stage",
     v_champ:tn=>"WORLD CHAMPIONS! "+tn+" finally lift the trophy.",
     v_champ_unbeaten:tn=>"WORLD CHAMPIONS — and unbeaten. "+tn+" are immortal.",
     v_runner:"Lost final. Silver — again. The 1–3 story in a nutshell.",
@@ -874,8 +874,8 @@ function simulate(rig){
       if(rig && h.mine && gh<=ga) gh=ga+1;
       if(rig && a.mine && ga<=gh) ga=gh+1;
       logMatch(h,gh,ga); logMatch(a,ga,gh);
-      if(h.mine) myMatches.push({ opp:a, round:tt("group")+" "+GL[gi], mg:gh, og:ga });
-      if(a.mine) myMatches.push({ opp:h, round:tt("group")+" "+GL[gi], mg:ga, og:gh });
+      if(h.mine) myMatches.push({ opp:a, round:tt("group")+" "+GL[gi], rkey:"group", mg:gh, og:ga });
+      if(a.mine) myMatches.push({ opp:h, round:tt("group")+" "+GL[gi], rkey:"group", mg:ga, og:gh });
     }
     const std = grp.slice().sort(cmpTable);
     if(grp.indexOf(me) >= 0){
@@ -900,7 +900,7 @@ function simulate(rig){
       logMatch(h,m.gh,m.ga); logMatch(a,m.ga,m.gh);
       if(h.mine || a.mine){
         const opp = h.mine ? a : h;
-        myMatches.push({ opp, round:tt(roundKeys[stage]),
+        myMatches.push({ opp, round:tt(roundKeys[stage]), rkey:roundKeys[stage],
           mg: h.mine?m.gh:m.ga, og: h.mine?m.ga:m.gh,
           pens:m.pens, pmg:h.mine?m.ph:m.pa, pog:h.mine?m.pa:m.ph, won:m.win.mine });
         if(!m.win.mine) myExit = stage;
@@ -917,7 +917,11 @@ function simulate(rig){
   else { const M=[["r16",16],["qf",8],["sf",3],["final",2]]; result = { stage:M[myExit][0], placement:M[myExit][1] }; }
   result.champion = champion;
   result.unbeaten = (me.l === 0);
+  result.allWon = (me.d === 0 && me.l === 0);
+  result.reachedKO = result.placement <= 16;
   result.groupWon = !!(myGroup && myGroup[0].mine);
+  result.penLoss = myMatches.some(m => m.pens && m.won === false);
+  result.penFinalWin = champion.mine && myMatches.some(m => m.rkey === "final" && m.pens && m.won);
 
   const data = { me, result, myGroup, myGroupLetter, myMatches, champion, rig };
   if(!rig){ lastTourney = data; lastMe = me; lastPos = result.placement; lastOrder = myMatches; lastTeams = myGroup; }
@@ -984,6 +988,7 @@ function renderTournamentFinale(data, animate){
     clearInterval(tableTimer);
     tableTimer = setInterval(()=>{ if(ri>=trs.length){ clearInterval(tableTimer); return; } trs[ri].classList.add("in"); ri++; }, 80);
   }
+  renderKoPath(data);
 
   const champ = (result.stage === "champ");
   let msg = tourneyVerdict(result);
@@ -1008,6 +1013,18 @@ function renderTournamentFinale(data, animate){
     sfx.fanfare();
     confetti(["#F5C518","#FFE584","#FFFFFF","#EE7203"], 240);
   }
+}
+function renderKoPath(data){
+  const el = $("kopath"); if(!el) return;
+  const ko = (data.myMatches || []).filter(m => m.rkey && m.rkey !== "group");
+  if(!ko.length){ el.innerHTML = ""; return; }
+  el.innerHTML = '<p class="eyebrow kopath-h">' + tt("ko_path") + '</p>' + ko.map(m => {
+    const res = m.won ? "W" : "V";
+    const pens = m.pens ? ' <span class="pens">(' + m.pmg + "–" + m.pog + " " + tt("pens") + ')</span>' : "";
+    return '<div class="korow ' + res + '"><span class="kr">' + m.round + '</span>'
+      + '<span class="ko">' + esc(m.opp.a || m.opp.name || "") + '</span>'
+      + '<span class="ks">' + m.mg + "–" + m.og + pens + '</span></div>';
+  }).join("");
 }
 function verdictMessage(me, myPos){
   if(isPerfect(me))      return t("v_perfect");
@@ -1164,7 +1181,7 @@ function confetti(colors, count){
 
 /* ================= records (localStorage) ================= */
 const RKEY = SK+"records";
-const ACHIEVEMENTS = ["wereldkampioen","zilver","groepswinst","ongeslagen","totaalvoetbal","klasse88","tijdreiziger","ineenkeer"];
+const ACHIEVEMENTS = ["wereldkampioen","alles_gewonnen","penaltyheld","ongeslagen","zilver","penaltydrama","groepswinst","kasteel","doelfeest","totaalvoetbal","klasse88","jongegarde","tijdreiziger","ineenkeer"];
 let lastOrder = null, lastMe = null, lastPos = 0, lastTeams = null, lastTourney = null;
 function loadRecords(){
   try { return JSON.parse(localStorage.getItem(RKEY)); } catch(e){ return null; }
@@ -1195,11 +1212,17 @@ function updateRecords(me, result){
   const perClub = {};
   xi.forEach(p => { perClub[p.clubN] = (perClub[p.clubN] || 0) + 1; });
   if(champ) grant("wereldkampioen");
-  if(result.stage === "final") grant("zilver");
-  if(result.groupWon) grant("groepswinst");
+  if(champ && result.allWon) grant("alles_gewonnen");
+  if(result.penFinalWin) grant("penaltyheld");
   if(champ && result.unbeaten) grant("ongeslagen");
+  if(result.stage === "final") grant("zilver");
+  if(result.penLoss && !champ) grant("penaltydrama");
+  if(result.groupWon) grant("groepswinst");
+  if(result.reachedKO && me.ga <= 1) grant("kasteel");
+  if(me.gf >= 12) grant("doelfeest");
   if(((perClub["WK 1974"] || 0) + (perClub["WK 1978"] || 0)) >= 3) grant("totaalvoetbal");
   if((perClub["EK 1988"] || 0) >= 4) grant("klasse88");
+  if((perClub["WK 2026"] || 0) >= 4) grant("jongegarde");
   if(new Set(xi.map(p => p.clubN)).size === 11) grant("tijdreiziger");
   if(rerolls === MAX_REROLLS) grant("ineenkeer");
 
@@ -1407,7 +1430,7 @@ function teamCode(){
     tn: teamName, f: formation, st: stijl, hc: hardcore ? 1 : 0,
     stg: T.result.stage, gl: T.myGroupLetter, ch: T.champion.mine ? null : T.champion.name,
     me: [me.w, me.d, me.l, me.gf, me.ga, me.pts],
-    ord: T.myMatches.map(x => [x.opp.a, x.mg, x.og, x.round, x.pens ? 1 : 0, x.pmg || 0, x.pog || 0, x.won ? 1 : 0]),
+    ord: T.myMatches.map(x => [x.opp.a, x.mg, x.og, x.round, x.pens ? 1 : 0, x.pmg || 0, x.pog || 0, x.won ? 1 : 0, x.rkey || "group"]),
     grp: T.myGroup.map(tm => [tm.mine ? null : tm.name, tm.w, tm.d, tm.l, tm.gf, tm.ga, tm.pts]),
     p: picks.map(pk => pk ? [pk.pos, pk.name, pk.rating, pk.clubN, pk.clubA, pk.season] : 0)
   };
@@ -1435,7 +1458,7 @@ function loadSharedTeam(code){
   picks.forEach(pk => { if(pk) pickedNames.add(normName(pk.name)); });
   const me = { name: teamName, mine: true, w: d.me[0], d: d.me[1], l: d.me[2], gf: d.me[3], ga: d.me[4], pts: d.me[5] };
   const myGroup = d.grp.map(a => a[0] === null ? me : { name: a[0], mine: false, w: a[1], d: a[2], l: a[3], gf: a[4], ga: a[5], pts: a[6] });
-  const myMatches = d.ord.map(a => ({ opp: { a: a[0] }, mg: a[1], og: a[2], round: a[3], pens: !!a[4], pmg: a[5], pog: a[6], won: !!a[7] }));
+  const myMatches = d.ord.map(a => ({ opp: { a: a[0] }, mg: a[1], og: a[2], round: a[3], pens: !!a[4], pmg: a[5], pog: a[6], won: !!a[7], rkey: a[8] || "group" }));
   const champion = d.ch === null ? me : { name: d.ch, mine: false };
   const result = { stage: d.stg, placement: stagePlacement(d.stg), unbeaten: (me.l === 0), champion, groupWon: !!(myGroup[0] && myGroup[0].mine) };
   lastTourney = { me, result, myGroup, myGroupLetter: d.gl, myMatches, champion, rig: false };

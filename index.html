@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="nl" class="theme-oranje">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,6 +19,7 @@ window.BUILD_CONFIG = {
   store: "oranje_",
   brand: "1–3",
   defaultName: "Oranje",
+  tagFmt: function(a){ return (a[0] === "W" ? "WK" : "EK") + " '" + a.slice(1); },
   cardSeason: false,
   cardNavy: "#16130D", cardNavy2: "#211C13", cardAccent: "#F3791F", cardMuted: "#B6A689",
   kit: { p:"solid", c:["#EE7203","#FFFFFF"] },
@@ -51,6 +52,7 @@ window.BUILD_CONFIG = {
       apptitle:"Oranje<br>op het WK",
       tagline:"Draft · Groepsfase · Knock-out",
       teamname_ph:"Oranje",
+      final_table:"Eindstand",
       phase_setup:"Fase: opstelling kiezen",
       phase_season:"Fase: toernooi",
       season_of:"Het WK van",
@@ -72,11 +74,17 @@ window.BUILD_CONFIG = {
         + "<p><b>Records &amp; badges</b> worden lokaal bewaard. Gebruik <b>\u{1F4CB}</b> voor de spelersdatabase, de <b>taalknop</b> voor NL/EN en <b>\u{1F50A}</b> voor geluid.</p>",
       ach:{
         wereldkampioen:["Wereldkampioen","Win het WK"],
-        zilver:["Zilver, alweer","Verlies de finale"],
-        groepswinst:["Groepswinst","Win je groep in de groepsfase"],
+        alles_gewonnen:["Foutloos","Word kampioen én win elke wedstrijd"],
+        penaltyheld:["Penaltyvloek verbroken","Win de finale na strafschoppen"],
         ongeslagen:["Onverslaanbaar","Word wereldkampioen zonder te verliezen"],
+        zilver:["Zilver, alweer","Verlies de finale"],
+        penaltydrama:["Penaltydrama","Word uitgeschakeld na strafschoppen"],
+        groepswinst:["Groepswinst","Win je groep in de groepsfase"],
+        kasteel:["Het Kasteel","Bereik de knock-out met maximaal 1 goal tegen"],
+        doelfeest:["Doelpuntenfeest","Maak 12 of meer goals in het toernooi"],
         totaalvoetbal:["Totaalvoetbal","Stel 3+ spelers op uit WK 1974 en 1978"],
         klasse88:["De klasse van '88","Stel 4+ spelers op uit EK 1988"],
+        jongegarde:["Nieuwe lichting","Stel 4+ spelers op uit WK 2026"],
         tijdreiziger:["Tijdreiziger","Spelers uit 11 verschillende eindrondes"],
         ineenkeer:["In één keer","Voltooi de draft zonder rerolls"]
       }
@@ -85,6 +93,7 @@ window.BUILD_CONFIG = {
       apptitle:"Oranje<br>at the World Cup",
       tagline:"Draft · Groups · Knockout",
       teamname_ph:"Oranje",
+      final_table:"Standings",
       phase_setup:"Phase: choose line-up",
       phase_season:"Phase: tournament",
       season_of:"The World Cup of",
@@ -106,11 +115,17 @@ window.BUILD_CONFIG = {
         + "<p><b>Records &amp; badges</b> are stored locally. Use <b>\u{1F4CB}</b> for the player database, the <b>language button</b> for NL/EN and <b>\u{1F50A}</b> for sound.</p>",
       ach:{
         wereldkampioen:["World champion","Win the World Cup"],
-        zilver:["Silver, again","Lose the final"],
-        groepswinst:["Group winner","Win your group in the group stage"],
+        alles_gewonnen:["Flawless","Become champion and win every match"],
+        penaltyheld:["Penalty curse broken","Win the final on penalties"],
         ongeslagen:["Unbeatable","Win the World Cup without losing a game"],
+        zilver:["Silver, again","Lose the final"],
+        penaltydrama:["Penalty heartbreak","Get knocked out on penalties"],
+        groepswinst:["Group winner","Win your group in the group stage"],
+        kasteel:["The Fortress","Reach the knockouts conceding at most 1 goal"],
+        doelfeest:["Goal fest","Score 12 or more goals in the tournament"],
         totaalvoetbal:["Total Football","Field 3+ players from the 1974 & 1978 squads"],
         klasse88:["Class of '88","Field 4+ players from Euro 1988"],
+        jongegarde:["New generation","Field 4+ players from the 2026 World Cup"],
         tijdreiziger:["Time traveller","Players from 11 different tournaments"],
         ineenkeer:["First time right","Finish the draft without rerolls"]
       }
@@ -283,6 +298,7 @@ window.BUILD_CONFIG = {
       <div class="tablecard">
         <p class="eyebrow" style="margin-bottom:10px"><span data-i18n="final_table">Eindstand toernooi</span> <span id="tableyear"></span></p>
         <table class="standings" id="standings"></table>
+        <div class="kopath" id="kopath"></div>
       </div>
       <div class="verdictcol">
         <div class="verdict" id="verdict">
