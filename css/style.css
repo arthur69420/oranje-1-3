@@ -677,6 +677,24 @@ body.theme-oranje .verdict.perfect .msg{ color:#231905; }
 .fix.ko.pending{ animation:kothrob .8s ease-in-out infinite; }
 @keyframes kothrob{ 0%,100%{box-shadow:0 0 0 0 rgba(245,197,24,0);} 50%{box-shadow:0 0 12px 1px rgba(245,197,24,.45);} }
 
+/* strafschoppenreeks (langzaam, spannend) */
+.shootout{ position:fixed; inset:0; z-index:120; display:none; align-items:center; justify-content:center; background:rgba(4,8,22,.66); padding:20px; }
+.shootout.show{ display:flex; animation:fadeUp .25s ease both; }
+.so-card{ background:var(--navy-2); border:1px solid var(--line-strong); border-top:4px solid var(--gold); width:min(440px,100%); padding:20px 22px; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+.so-h{ text-align:center; margin-bottom:16px; }
+.so-row{ display:flex; align-items:center; gap:10px; padding:10px 6px; border-top:1px solid var(--line); transition:background .2s; }
+.so-row.kicking{ background:rgba(245,197,24,.08); }
+.so-team{ font-family:"Oswald",sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:.03em; font-size:15px; width:118px; flex:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.so-marks{ flex:1 1 auto; display:flex; gap:5px; flex-wrap:wrap; }
+.so-mark{ width:19px; height:19px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; border-radius:50%; background:var(--navy-3); }
+.so-mark.pending{ animation:qpulse .5s ease-in-out infinite; }
+.so-mark.goal{ background:rgba(39,174,96,.28); animation:scorepop .4s cubic-bezier(.2,1.5,.4,1) both; }
+.so-mark.miss{ background:rgba(228,72,59,.28); animation:scorepop .4s cubic-bezier(.2,1.5,.4,1) both; }
+.so-tally{ font-family:"Oswald",sans-serif; font-weight:600; font-size:24px; width:26px; text-align:right; flex:none; }
+.so-result{ text-align:center; margin-top:16px; font-family:"Oswald",sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:.04em; font-size:18px; min-height:24px; }
+.so-result.W{ color:var(--gold); }
+.so-result.V{ color:var(--loss); }
+
 /* ================= v4: hardcore, spelerskeuze, share-kaart, veld ================= */
 .pchoice .usedtag{
   font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;

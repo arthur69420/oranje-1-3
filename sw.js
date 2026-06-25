@@ -1,6 +1,6 @@
 /* Service worker: network-first met cache-fallback, zodat het spel offline werkt
    maar updates direct doorkomen zodra er internet is. */
-const CACHE = "oranje-1-3-v5";
+const CACHE = "oranje-1-3-v6";
 const ASSETS = [
   "./",
   "./index.html",

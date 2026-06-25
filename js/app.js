@@ -162,6 +162,12 @@ function shirtSVG(abbr, size){
         inner += '<path d="M13 1 Q20 6.5 27 1" fill="none" stroke="'+k.collar+'" stroke-width="1.8"/>';
       if(k.hem)
         inner += '<rect x="10.5" y="32.1" width="19" height="1.8" fill="'+k.hem+'"/>';
+      // KNVB-embleem: gekroond schild op de borst (kleur per shirt, standaard donker)
+      if(k.crest !== false){
+        const cc = k.crest || "#15151c";
+        inner += '<path d="M22.6 8.7 L22.6 6.4 L24.4 7.7 L26 5.7 L27.6 7.7 L29.4 6.4 L29.4 8.7 Z" fill="'+cc+'"/>'
+               + '<path d="M22.6 9 L29.4 9 L29.4 12.6 Q29.4 16.4 26 17.8 Q22.6 16.4 22.6 12.6 Z" fill="'+cc+'"/>';
+      }
       break;
     }
   }
@@ -805,6 +811,7 @@ const TT = {
   nl: {
     world_cup:"WK", group:"Groep", th_group:"Groep", pens:"n.s.",
     r16:"Achtste", qf:"Kwartfinale", sf:"Halve finale", final:"Finale", world_champ:"Wereldkampioen", ko_path:"Knock-outfase",
+    pens_full:"Strafschoppen", so_wins:"wint",
     st_round:"Ronde", st_won:"Winst", st_draw:"Gelijk", st_lost:"Verlies", st_gf:"Goals voor", st_ga:"Goals tegen",
     stg_champ:"Winnaar", stg_final:"Finale", stg_sf:"Halve finale", stg_qf:"Kwartfinale", stg_r16:"Achtste finale", stg_group:"Groepsfase",
     v_champ:tn=>"WERELDKAMPIOEN! "+tn+" heeft de beker eindelijk te pakken.",
@@ -819,6 +826,7 @@ const TT = {
   en: {
     world_cup:"WC", group:"Group", th_group:"Group", pens:"pens",
     r16:"Last 16", qf:"Quarter-final", sf:"Semi-final", final:"Final", world_champ:"World champion", ko_path:"Knockout stage",
+    pens_full:"Penalty shootout", so_wins:"win",
     st_round:"Round", st_won:"Won", st_draw:"Drawn", st_lost:"Lost", st_gf:"Goals for", st_ga:"Goals against",
     stg_champ:"Winner", stg_final:"Final", stg_sf:"Semi-final", stg_qf:"Quarter-final", stg_r16:"Last 16", stg_group:"Group stage",
     v_champ:tn=>"WORLD CHAMPIONS! "+tn+" finally lift the trophy.",
@@ -839,17 +847,46 @@ function natInfo(code){ const x = (typeof NATIONS !== "undefined") && NATIONS.fi
 const cmpTable = (x,y) => y.pts-x.pts || (y.gf-y.ga)-(x.gf-x.ga) || y.gf-x.gf || (Math.random()-0.5);
 function blankRec(o){ o.w=0; o.d=0; o.l=0; o.gf=0; o.ga=0; o.pts=0; o.gp=0; return o; }
 function logMatch(t,gf,ga){ t.gp++; t.gf+=gf; t.ga+=ga; if(gf>ga){t.w++; t.pts+=3;} else if(gf<ga){t.l++;} else {t.d++; t.pts++;} }
+/* knock-out: een winst telt altijd als winst (ook na strafschoppen), nooit gelijk */
+function logKO(t,gf,ga,won){ t.gp++; t.gf+=gf; t.ga+=ga; if(won){ t.w++; t.pts+=3; } else { t.l++; } }
 function pickNations(n){
   return shuffle(NATIONS).slice(0,n).map(o => blankRec({ name:o.n, a:o.a, f:o.f, att:o.str, def:o.str, str:o.str, mine:false }));
+}
+/* volledige strafschoppenreeks: best-of-5 met sudden death; geeft de
+   trapvolgorde terug (voor de animatie) plus de einduitslag. */
+function simShootout(){
+  const sc = () => Math.random() < 0.75;
+  let h=0, a=0, hk=0, ak=0; const seq=[];
+  const left = k => Math.max(0, 5-k);
+  const canEnd = () => {
+    if(hk<=5 && ak<=5){ if(h > a+left(ak)) return true; if(a > h+left(hk)) return true; }
+    if(hk===ak && hk>=5 && h!==a) return true;
+    return false;
+  };
+  let guard=0;
+  while(guard++ < 40){
+    if(hk===ak){ const s=sc(); seq.push({t:"h",s}); if(s)h++; hk++; }
+    else        { const s=sc(); seq.push({t:"a",s}); if(s)a++; ak++; }
+    if(canEnd()) break;
+  }
+  return { seq, h, a };
 }
 function knockoutMatch(h,a,mods,rig){
   let [gh,ga] = playMatch(h,a,mods);
   if(rig && h.mine && gh<=ga) gh = ga+1;
   if(rig && a.mine && ga<=gh) ga = gh+1;
-  let pens=false, ph=0, pa=0;
-  if(gh===ga){ pens=true; do{ ph=3+poisson(1.4); pa=3+poisson(1.4); }while(ph===pa); }
+  let pens=false, ph=0, pa=0, shoot=null;
+  if(gh===ga){
+    pens=true;
+    let so = simShootout();
+    if(rig && (h.mine || a.mine)){
+      let tries=0;
+      while(tries++ < 50 && ((h.mine && so.h<=so.a) || (a.mine && so.a<=so.h))) so = simShootout();
+    }
+    ph=so.h; pa=so.a; shoot=so.seq;
+  }
   const hWins = pens ? ph>pa : gh>ga;
-  return { gh,ga,pens,ph,pa, win:hWins?h:a };
+  return { gh,ga,pens,ph,pa,shoot, win:hWins?h:a };
 }
 function fixClass(x){
   if(x.mg > x.og) return "W";
@@ -859,6 +896,7 @@ function fixClass(x){
 function simulate(rig){
   phase = "season";
   if(rig) disarmRig();
+  { const sp = $("shootout"); if(sp) sp.classList.remove("show"); }
   $("simbtn").classList.remove("show");
   phaseKey = "phase_season"; hintKey = "ready_hint"; hintArg = teamName;
   $("phaseline").textContent = t("phase_season") + (rig ? " · " + t("demo") : "");
@@ -904,12 +942,13 @@ function simulate(rig){
     for(let k=0;k<round.length;k+=2){
       const h=round[k], a=round[k+1];
       const m = knockoutMatch(h,a,mods,rig);
-      logMatch(h,m.gh,m.ga); logMatch(a,m.ga,m.gh);
+      logKO(h, m.gh, m.ga, m.win === h); logKO(a, m.ga, m.gh, m.win === a);
       if(h.mine || a.mine){
-        const opp = h.mine ? a : h;
+        const opp = h.mine ? a : h, myIsH = !!h.mine;
+        const shoot = m.shoot ? m.shoot.map(kk => ({ mine: (kk.t === "h") === myIsH, scored: kk.s })) : null;
         myMatches.push({ opp, round:tt(roundKeys[stage]), rkey:roundKeys[stage],
-          mg: h.mine?m.gh:m.ga, og: h.mine?m.ga:m.gh,
-          pens:m.pens, pmg:h.mine?m.ph:m.pa, pog:h.mine?m.pa:m.ph, won:m.win.mine });
+          mg: myIsH?m.gh:m.ga, og: myIsH?m.ga:m.gh,
+          pens:m.pens, pmg:myIsH?m.ph:m.pa, pog:myIsH?m.pa:m.ph, won:m.win.mine, shoot });
         if(!m.win.mine) myExit = stage;
       }
       next.push(m.win);
@@ -960,20 +999,81 @@ function simulate(rig){
     // spanning opbouwen, dan de uitslag onthullen (knock-out duurt langer)
     const suspense = isKO ? 1000 : 650;
     revealTimer = setTimeout(() => {
-      const sc = x.mg + "\u2013" + x.og + (x.pens ? ' <small>('+x.pmg+"\u2013"+x.pog+" "+tt("pens")+')</small>' : "");
       div.classList.remove("pending");
+      div.querySelector(".sc").innerHTML = x.mg + "\u2013" + x.og;
+      if(x.pens && x.shoot && x.shoot.length){
+        // gelijkspel \u2014 daarna de strafschoppenreeks heel langzaam afspelen
+        sfx.tick(4);
+        playShootout(x, () => {
+          div.classList.add(fixClass(x), "revealed");
+          div.querySelector(".sc").innerHTML = x.mg + "\u2013" + x.og + ' <small>('+x.pmg+"\u2013"+x.pog+" "+tt("pens")+')</small>';
+          i++;
+          revealTimer = setTimeout(revealNext, 700);
+        });
+        return;
+      }
       div.classList.add(fixClass(x), "revealed");
-      div.querySelector(".sc").innerHTML = sc;
       const won = x.mg > x.og || x.won === true;
-      const lost = x.mg < x.og || (x.won === false && x.mg === x.og);
+      const draw = x.mg === x.og && x.won == null;
       if(won){ sfx.land(); if(isKO){ tone(660,0.12,"triangle",0.16,0); tone(880,0.18,"triangle",0.16,0.12); } }
-      else if(lost){ tone(160,0.55,"sine",0.2,0); tone(120,0.5,"sine",0.16,0.06); }
-      else { sfx.tick(3); }
+      else if(draw){ sfx.tick(3); }
+      else { tone(160,0.55,"sine",0.2,0); tone(120,0.5,"sine",0.16,0.06); }
       i++;
       revealTimer = setTimeout(revealNext, 560);
     }, suspense);
   }
   revealNext();
+}
+/* strafschoppenreeks: trap voor trap, heel langzaam, met spanning */
+function ensureShootoutPanel(){
+  let p = $("shootout");
+  if(!p){ p = document.createElement("div"); p.id = "shootout"; p.className = "shootout"; document.body.appendChild(p); }
+  return p;
+}
+function playShootout(m, done){
+  const panel = ensureShootoutPanel();
+  const oppNm = m.opp.name || m.opp.n || "";
+  panel.innerHTML = '<div class="so-card">'
+    + '<p class="eyebrow so-h">' + tt("pens_full") + '</p>'
+    + '<div class="so-row" id="so-me"><span class="so-team">🇳🇱 ' + esc(teamName) + '</span><span class="so-marks"></span><span class="so-tally">0</span></div>'
+    + '<div class="so-row" id="so-op"><span class="so-team">' + esc(oppName(m.opp)) + '</span><span class="so-marks"></span><span class="so-tally">0</span></div>'
+    + '<p class="so-result" id="so-res">&nbsp;</p>'
+    + '</div>';
+  panel.classList.add("show");
+  let my = 0, op = 0, idx = 0;
+  function step(){
+    if(idx >= m.shoot.length){ finish(); return; }
+    const k = m.shoot[idx];
+    const row = k.mine ? $("so-me") : $("so-op");
+    const marks = row.querySelector(".so-marks");
+    const mark = document.createElement("span");
+    mark.className = "so-mark pending"; mark.textContent = "•";
+    marks.appendChild(mark);
+    row.classList.add("kicking");
+    sfx.tick(3);
+    revealTimer = setTimeout(() => {
+      row.classList.remove("kicking");
+      mark.classList.remove("pending");
+      mark.classList.add(k.scored ? "goal" : "miss");
+      mark.textContent = k.scored ? "⚽" : "✕";
+      if(k.scored){
+        if(k.mine){ my++; $("so-me").querySelector(".so-tally").textContent = my; }
+        else { op++; $("so-op").querySelector(".so-tally").textContent = op; }
+        sfx.land();
+      } else { tone(150, 0.45, "sine", 0.18, 0); }
+      idx++;
+      revealTimer = setTimeout(step, 640);
+    }, 820);
+  }
+  function finish(){
+    const won = my > op;
+    const res = $("so-res");
+    res.textContent = (won ? teamName : oppNm) + " " + tt("so_wins") + " " + my + "–" + op;
+    res.className = "so-result " + (won ? "W" : "V");
+    if(won) sfx.fanfare(); else tone(140, 0.7, "sine", 0.2, 0);
+    revealTimer = setTimeout(() => { panel.classList.remove("show"); done(); }, 2000);
+  }
+  step();
 }
 function stageLabel(stage){ return tt("stg_"+stage); }
 function tourneyVerdict(result){
