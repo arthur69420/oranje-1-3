@@ -180,11 +180,15 @@ function clubDot(abbr){
 /* ================= data voorbereiden =================
    Geen jeugdspeler-opvulling meer: clubs gebruiken hun echte selectie.
    Niet elke club hoeft elke positie te hebben. */
+/* posities mogen meerdere rollen bevatten, gescheiden door "/" (bv. "AM/LW").
+   De eerste is de hoofdpositie (telt voor indeling en att/def-gemiddelden). */
+const splitPos = p => String(p).split("/");
+const mainPos = p => splitPos(p)[0];
 Object.values(SEASONS).forEach(clubsArr => clubsArr.forEach(c => {
   const avg = arr => arr.length ? arr.reduce((s,pl) => s + pl[2], 0) / arr.length : 64;
   c.s   = avg(c.p);
-  c.att = avg(c.p.filter(pl => ATTPOS.includes(pl[1])));
-  c.def = avg(c.p.filter(pl => DEFPOS.includes(pl[1])));
+  c.att = avg(c.p.filter(pl => ATTPOS.includes(mainPos(pl[1]))));
+  c.def = avg(c.p.filter(pl => DEFPOS.includes(mainPos(pl[1]))));
 }));
 
 /* ================= state ================= */
@@ -375,7 +379,7 @@ const styleLabel = v => I18N[LANG].styles[v] || v;
 const modeLabel = v => (I18N[LANG].modes && I18N[LANG].modes[v]) || v;
 const draftModeLabel = v => (I18N[LANG].draftmodes && I18N[LANG].draftmodes[v]) || v;
 const grpLabel = v => I18N[LANG].groups[v] || v;
-const posLabel = c => I18N[LANG].pos[c] || c;
+const posLabel = c => splitPos(c).map(x => I18N[LANG].pos[x] || x).join(" / ");
 const ord = n => I18N[LANG].ord(n);
 const achName = id => I18N[LANG].ach[id][0];
 const achDesc = id => I18N[LANG].ach[id][1];
@@ -541,8 +545,9 @@ function showTeamStats(){
 
 /* ================= draft ================= */
 function openSlotsFor(playerPos){
+  const pp = splitPos(playerPos);
   return curForm().map((p,i) => ({pos: p[0], i}))
-    .filter(o => !picks[o.i] && COMPAT[o.pos].includes(playerPos));
+    .filter(o => !picks[o.i] && pp.some(x => COMPAT[o.pos].includes(x)));
 }
 function eligiblePlayers(s, club){
   return club.p.map((pl,i) => ({pl, i}))
@@ -703,7 +708,7 @@ function showSquad(s, club){
   // vaste plek per linie: keeper + verdediging links, middenveld + aanval rechts
   const colFor = { Keeper: col0, Verdediging: col0, Middenveld: col1, Aanval: col1 };
   GROUPS.forEach(([label, poss]) => {
-    const members = club.p.map((pl,i) => ({pl,i})).filter(o => poss.includes(o.pl[1]));
+    const members = club.p.map((pl,i) => ({pl,i})).filter(o => poss.includes(mainPos(o.pl[1])));
     if(!members.length) return;
     const anyOpen = members.some(o => openSlotsFor(o.pl[1]).length > 0 && !picked.has(s+"#"+club.n+"#"+o.i) && !pickedNames.has(normName(o.pl[0])));
     const g = document.createElement("div");
@@ -827,13 +832,15 @@ const TT = {
   }
 };
 const tt = (k,...a) => { const v=(TT[LANG]||TT.nl)[k]; return typeof v==="function"?v(...a):v; };
+const oppName = o => (o && o.f ? o.f + " " : "") + (o ? (o.name || o.n || o.a || "") : "");
+function natInfo(code){ const x = (typeof NATIONS !== "undefined") && NATIONS.find(n => n.a === code); return x ? { a:x.a, f:x.f, name:x.n } : { a:code, f:"", name:code }; }
 
 /* ================= toernooisimulatie (groepsfase + knock-out) ================= */
 const cmpTable = (x,y) => y.pts-x.pts || (y.gf-y.ga)-(x.gf-x.ga) || y.gf-x.gf || (Math.random()-0.5);
 function blankRec(o){ o.w=0; o.d=0; o.l=0; o.gf=0; o.ga=0; o.pts=0; o.gp=0; return o; }
 function logMatch(t,gf,ga){ t.gp++; t.gf+=gf; t.ga+=ga; if(gf>ga){t.w++; t.pts+=3;} else if(gf<ga){t.l++;} else {t.d++; t.pts++;} }
 function pickNations(n){
-  return shuffle(NATIONS).slice(0,n).map(o => blankRec({ name:o.n, a:o.a, att:o.str, def:o.str, str:o.str, mine:false }));
+  return shuffle(NATIONS).slice(0,n).map(o => blankRec({ name:o.n, a:o.a, f:o.f, att:o.str, def:o.str, str:o.str, mine:false }));
 }
 function knockoutMatch(h,a,mods,rig){
   let [gh,ga] = playMatch(h,a,mods);
@@ -858,7 +865,7 @@ function simulate(rig){
   season = tt("world_cup");
   const r = ratings();
   const mods = styleMods();
-  const me = blankRec({ name: teamName, a:"NED", att:r.att, def:r.def, mine:true });
+  const me = blankRec({ name: teamName, a:"NED", f:"🇳🇱", att:r.att, def:r.def, mine:true });
   const field = shuffle([me, ...pickNations(31)]);
   const GL = "ABCDEFGH";
   const groups = [];
@@ -881,7 +888,7 @@ function simulate(rig){
     if(grp.indexOf(me) >= 0){
       myGroupLetter = GL[gi];
       // momentopname ná de groepsfase (de teamobjecten muteren nog in de knock-out)
-      myGroup = std.map(tm => ({ name:tm.name, mine:!!tm.mine, w:tm.w, d:tm.d, l:tm.l, gf:tm.gf, ga:tm.ga, pts:tm.pts }));
+      myGroup = std.map(tm => ({ name:tm.name, mine:!!tm.mine, f:tm.f, w:tm.w, d:tm.d, l:tm.l, gf:tm.gf, ga:tm.ga, pts:tm.pts }));
     }
     advancers.push([std[0], std[1]]);
   });
@@ -937,24 +944,36 @@ function simulate(rig){
   $("season").scrollIntoView({ behavior: "smooth", block: "start" });
 
   let i = 0;
-  clearInterval(revealTimer);
-  revealTimer = setInterval(() => {
-    if(i >= myMatches.length){
-      clearInterval(revealTimer);
-      renderTournamentFinale(data, true);
-      return;
-    }
+  clearInterval(revealTimer); clearTimeout(revealTimer);
+  function revealNext(){
+    if(i >= myMatches.length){ renderTournamentFinale(data, true); return; }
     const x = myMatches[i];
+    const isKO = x.rkey && x.rkey !== "group";
     const div = document.createElement("div");
-    div.className = "fix " + fixClass(x);
-    const sc = x.mg + "\u2013" + x.og + (x.pens ? ' <small>('+x.pmg+"\u2013"+x.pog+" "+tt("pens")+')</small>' : "");
-    div.innerHTML = '<div class="top"><span>'+x.round+'</span><span>'+x.opp.a+'</span></div>'
-      + '<div class="sc">'+sc+'</div>';
+    div.className = "fix pending" + (isKO ? " ko" : "");
+    div.innerHTML = '<div class="top"><span>'+x.round+'</span><span class="opp">'+oppName(x.opp)+'</span></div>'
+      + '<div class="sc"><span class="q">?</span><span class="dash">\u2013</span><span class="q">?</span></div>';
     grid.appendChild(div);
     requestAnimationFrame(() => div.classList.add("in"));
-    sfx.tick(i + 1);
-    i++;
-  }, 720);
+    div.scrollIntoView({ behavior:"smooth", block:"nearest" });
+    sfx.tick(isKO ? 6 : 2);
+    // spanning opbouwen, dan de uitslag onthullen (knock-out duurt langer)
+    const suspense = isKO ? 1000 : 650;
+    revealTimer = setTimeout(() => {
+      const sc = x.mg + "\u2013" + x.og + (x.pens ? ' <small>('+x.pmg+"\u2013"+x.pog+" "+tt("pens")+')</small>' : "");
+      div.classList.remove("pending");
+      div.classList.add(fixClass(x), "revealed");
+      div.querySelector(".sc").innerHTML = sc;
+      const won = x.mg > x.og || x.won === true;
+      const lost = x.mg < x.og || (x.won === false && x.mg === x.og);
+      if(won){ sfx.land(); if(isKO){ tone(660,0.12,"triangle",0.16,0); tone(880,0.18,"triangle",0.16,0.12); } }
+      else if(lost){ tone(160,0.55,"sine",0.2,0); tone(120,0.5,"sine",0.16,0.06); }
+      else { sfx.tick(3); }
+      i++;
+      revealTimer = setTimeout(revealNext, 560);
+    }, suspense);
+  }
+  revealNext();
 }
 function stageLabel(stage){ return tt("stg_"+stage); }
 function tourneyVerdict(result){
@@ -978,7 +997,7 @@ function renderTournamentFinale(data, animate){
     const tr = document.createElement("tr");
     tr.className = (tm.mine ? "mine " : "") + (idx < 2 ? "cl" : "") + (animate ? "" : " in");
     const ds = tm.gf - tm.ga;
-    tr.innerHTML = "<td class='rank'>"+(idx+1)+"</td><td class='l'>"+esc(tm.mine?teamName:tm.name)+"</td>"
+    tr.innerHTML = "<td class='rank'>"+(idx+1)+"</td><td class='l'>"+(tm.f?tm.f+" ":"")+esc(tm.mine?teamName:tm.name)+"</td>"
       + "<td>"+tm.w+"</td><td>"+tm.d+"</td><td>"+tm.l+"</td>"
       + "<td>"+(ds>0?"+":"")+ds+"</td><td><strong>"+tm.pts+"</strong></td>";
     tbl.appendChild(tr);
@@ -1022,7 +1041,7 @@ function renderKoPath(data){
     const res = m.won ? "W" : "V";
     const pens = m.pens ? ' <span class="pens">(' + m.pmg + "–" + m.pog + " " + tt("pens") + ')</span>' : "";
     return '<div class="korow ' + res + '"><span class="kr">' + m.round + '</span>'
-      + '<span class="ko">' + esc(m.opp.a || m.opp.name || "") + '</span>'
+      + '<span class="ko">' + esc(oppName(m.opp)) + '</span>'
       + '<span class="ks">' + m.mg + "–" + m.og + pens + '</span></div>';
   }).join("");
 }
@@ -1456,9 +1475,10 @@ function loadSharedTeam(code){
   pickedCount = picks.filter(Boolean).length;
   picked = new Set(); pickedNames = new Set();
   picks.forEach(pk => { if(pk) pickedNames.add(normName(pk.name)); });
-  const me = { name: teamName, mine: true, w: d.me[0], d: d.me[1], l: d.me[2], gf: d.me[3], ga: d.me[4], pts: d.me[5] };
-  const myGroup = d.grp.map(a => a[0] === null ? me : { name: a[0], mine: false, w: a[1], d: a[2], l: a[3], gf: a[4], ga: a[5], pts: a[6] });
-  const myMatches = d.ord.map(a => ({ opp: { a: a[0] }, mg: a[1], og: a[2], round: a[3], pens: !!a[4], pmg: a[5], pog: a[6], won: !!a[7], rkey: a[8] || "group" }));
+  const me = { name: teamName, mine: true, f: "🇳🇱", w: d.me[0], d: d.me[1], l: d.me[2], gf: d.me[3], ga: d.me[4], pts: d.me[5] };
+  const flagByName = nm => { const x = (typeof NATIONS !== "undefined") && NATIONS.find(n => n.n === nm); return x ? x.f : ""; };
+  const myGroup = d.grp.map(a => a[0] === null ? me : { name: a[0], mine: false, f: flagByName(a[0]), w: a[1], d: a[2], l: a[3], gf: a[4], ga: a[5], pts: a[6] });
+  const myMatches = d.ord.map(a => ({ opp: natInfo(a[0]), mg: a[1], og: a[2], round: a[3], pens: !!a[4], pmg: a[5], pog: a[6], won: !!a[7], rkey: a[8] || "group" }));
   const champion = d.ch === null ? me : { name: d.ch, mine: false };
   const result = { stage: d.stg, placement: stagePlacement(d.stg), unbeaten: (me.l === 0), champion, groupWon: !!(myGroup[0] && myGroup[0].mine) };
   lastTourney = { me, result, myGroup, myGroupLetter: d.gl, myMatches, champion, rig: false };
@@ -1486,7 +1506,7 @@ function renderSharedSeason(){
     const div = document.createElement("div");
     div.className = "fix " + fixClass(x) + " in";
     const sc = x.mg + "–" + x.og + (x.pens ? ' <small>('+x.pmg+"–"+x.pog+" "+tt("pens")+')</small>' : "");
-    div.innerHTML = '<div class="top"><span>'+x.round+'</span><span>'+x.opp.a+'</span></div><div class="sc">'+sc+'</div>';
+    div.innerHTML = '<div class="top"><span>'+x.round+'</span><span class="opp">'+oppName(x.opp)+'</span></div><div class="sc">'+sc+'</div>';
     grid.appendChild(div);
   });
   $("finale").classList.add("show");

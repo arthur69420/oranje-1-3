@@ -664,6 +664,19 @@ body.theme-oranje .verdict.perfect .msg{ color:#231905; }
 .korow.W .ks{ color:var(--win); }
 .korow.V .ks{ color:var(--loss); }
 
+/* spannende score-reveal: kaart komt op met "? – ?", daarna ploft de uitslag */
+.fix .top .opp{ max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; color:var(--txt); }
+.fix .sc .dash{ opacity:.4; margin:0 3px; }
+.fix.pending::before{ background:var(--gold); }
+.fix.pending .sc{ color:var(--muted); }
+.fix.pending .sc .q{ display:inline-block; animation:qpulse .55s ease-in-out infinite; }
+@keyframes qpulse{ 0%,100%{opacity:.3; transform:scale(.85);} 50%{opacity:1; transform:scale(1.18);} }
+.fix.revealed .sc{ animation:scorepop .45s cubic-bezier(.2,1.5,.4,1) both; }
+@keyframes scorepop{ 0%{opacity:0; transform:scale(.3);} 60%{transform:scale(1.28);} 100%{opacity:1; transform:scale(1);} }
+.fix.ko{ border-color:rgba(245,197,24,.5); }
+.fix.ko.pending{ animation:kothrob .8s ease-in-out infinite; }
+@keyframes kothrob{ 0%,100%{box-shadow:0 0 0 0 rgba(245,197,24,0);} 50%{box-shadow:0 0 12px 1px rgba(245,197,24,.45);} }
+
 /* ================= v4: hardcore, spelerskeuze, share-kaart, veld ================= */
 .pchoice .usedtag{
   font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;
