@@ -841,20 +841,23 @@ const TT = {
   }
 };
 const tt = (k,...a) => { const v=(TT[LANG]||TT.nl)[k]; return typeof v==="function"?v(...a):v; };
-/* niet elk systeem (o.a. Windows) rendert vlag-emoji; dan tonen we alleen de naam */
-const FLAGS_OK = (function(){
-  try{
-    const c = document.createElement("canvas"); c.width = c.height = 16;
-    const x = c.getContext("2d"); x.font = "16px sans-serif"; x.fillStyle = "#000";
-    x.fillText("🇨🇦", -2, 14);   // 🇨🇦 — bevat rood als de vlag echt rendert
-    const d = x.getImageData(0, 0, 16, 16).data;
-    for(let i=0;i<d.length;i+=4){ if(d[i] > 120 && d[i+1] < 90 && d[i+2] < 90) return true; }
-    return false;
-  }catch(e){ return true; }
-})();
-const flag = f => (FLAGS_OK && f) ? f + " " : "";
-const oppName = o => flag(o && o.f) + (o ? (o.name || o.n || o.a || "") : "");
+/* eigen SVG-vlaggen (werken overal, anders dan emoji-vlaggen op o.a. Windows) */
+function flagSVG(code){
+  const f = (typeof FLAG !== "undefined") && FLAG[code];
+  let inner;
+  if(!f) inner = '<rect width="3" height="2" fill="#888"/>';
+  else if(f.svg) inner = f.svg;
+  else if(f.t === "v3") inner = f.c.map((c,i)=>'<rect x="'+i+'" width="1" height="2" fill="'+c+'"/>').join("");
+  else if(f.t === "h3") inner = f.c.map((c,i)=>'<rect y="'+(i*2/3)+'" width="3" height="'+(2/3)+'" fill="'+c+'"/>').join("");
+  else if(f.t === "h2") inner = f.c.map((c,i)=>'<rect y="'+i+'" width="3" height="1" fill="'+c+'"/>').join("");
+  else inner = '<rect width="3" height="2" fill="#888"/>';
+  return '<svg class="flag" viewBox="0 0 3 2" preserveAspectRatio="none" aria-hidden="true">'+inner+'</svg>';
+}
+const flagHTML = code => code ? flagSVG(code) : "";
+const oppName = o => o ? (o.name || o.n || o.a || "") : "";   // alleen naam (platte tekst)
+const natLabel = o => flagHTML(o && o.a) + esc(oppName(o));    // vlag + naam (HTML)
 function natInfo(code){ const x = (typeof NATIONS !== "undefined") && NATIONS.find(n => n.a === code); return x ? { a:x.a, f:x.f, name:x.n } : { a:code, f:"", name:code }; }
+function codeByName(nm){ const x = (typeof NATIONS !== "undefined") && NATIONS.find(n => n.n === nm); return x ? x.a : ""; }
 
 /* ================= toernooisimulatie (groepsfase + knock-out) ================= */
 const cmpTable = (x,y) => y.pts-x.pts || (y.gf-y.ga)-(x.gf-x.ga) || y.gf-x.gf || (Math.random()-0.5);
@@ -942,7 +945,7 @@ function simulate(rig){
     if(grp.indexOf(me) >= 0){
       myGroupLetter = GL[gi];
       // momentopname ná de groepsfase (de teamobjecten muteren nog in de knock-out)
-      myGroup = std.map(tm => ({ name:tm.name, mine:!!tm.mine, f:tm.f, w:tm.w, d:tm.d, l:tm.l, gf:tm.gf, ga:tm.ga, pts:tm.pts }));
+      myGroup = std.map(tm => ({ name:tm.name, mine:!!tm.mine, a:tm.a, w:tm.w, d:tm.d, l:tm.l, gf:tm.gf, ga:tm.ga, pts:tm.pts }));
     }
     advancers.push([std[0], std[1]]);
   });
@@ -1007,7 +1010,7 @@ function simulate(rig){
     const div = document.createElement("div");
     div.className = "fix pending" + (isKO ? " ko" : "");
     div.innerHTML = '<div class="fr">'+x.round+'</div>'
-      + '<div class="fo">'+oppName(x.opp)+'</div>'
+      + '<div class="fo">'+natLabel(x.opp)+'</div>'
       + '<div class="sc"><span class="q">?</span><span class="dash">\u2013</span><span class="q">?</span></div>';
     grid.appendChild(div);
     requestAnimationFrame(() => div.classList.add("in"));
@@ -1052,8 +1055,8 @@ function playShootout(m, done){
   const oppNm = m.opp.name || m.opp.n || "";
   panel.innerHTML = '<div class="so-card">'
     + '<p class="eyebrow so-h">' + tt("pens_full") + '</p>'
-    + '<div class="so-row" id="so-me"><span class="so-team">' + flag("🇳🇱") + esc(teamName) + '</span><span class="so-marks"></span><span class="so-tally">0</span></div>'
-    + '<div class="so-row" id="so-op"><span class="so-team">' + esc(oppName(m.opp)) + '</span><span class="so-marks"></span><span class="so-tally">0</span></div>'
+    + '<div class="so-row" id="so-me"><span class="so-team">' + flagHTML("NED") + esc(teamName) + '</span><span class="so-marks"></span><span class="so-tally">0</span></div>'
+    + '<div class="so-row" id="so-op"><span class="so-team">' + natLabel(m.opp) + '</span><span class="so-marks"></span><span class="so-tally">0</span></div>'
     + '<p class="so-result" id="so-res">&nbsp;</p>'
     + '</div>';
   panel.classList.add("show");
@@ -1114,7 +1117,7 @@ function renderTournamentFinale(data, animate){
     const tr = document.createElement("tr");
     tr.className = (tm.mine ? "mine " : "") + (idx < 2 ? "cl" : "") + (animate ? "" : " in");
     const ds = tm.gf - tm.ga;
-    tr.innerHTML = "<td class='rank'>"+(idx+1)+"</td><td class='l'>"+flag(tm.f)+esc(tm.mine?teamName:tm.name)+"</td>"
+    tr.innerHTML = "<td class='rank'>"+(idx+1)+"</td><td class='l'>"+flagHTML(tm.mine?"NED":tm.a)+esc(tm.mine?teamName:tm.name)+"</td>"
       + "<td>"+tm.w+"</td><td>"+tm.d+"</td><td>"+tm.l+"</td>"
       + "<td>"+(ds>0?"+":"")+ds+"</td><td><strong>"+tm.pts+"</strong></td>";
     tbl.appendChild(tr);
@@ -1158,7 +1161,7 @@ function renderKoPath(data){
     const res = m.won ? "W" : "V";
     const pens = m.pens ? ' <span class="pens">(' + m.pmg + "–" + m.pog + " " + tt("pens") + ')</span>' : "";
     return '<div class="korow ' + res + '"><span class="kr">' + m.round + '</span>'
-      + '<span class="ko">' + esc(oppName(m.opp)) + '</span>'
+      + '<span class="ko">' + natLabel(m.opp) + '</span>'
       + '<span class="ks">' + m.mg + "–" + m.og + pens + '</span></div>';
   }).join("");
 }
@@ -1592,9 +1595,8 @@ function loadSharedTeam(code){
   pickedCount = picks.filter(Boolean).length;
   picked = new Set(); pickedNames = new Set();
   picks.forEach(pk => { if(pk) pickedNames.add(normName(pk.name)); });
-  const me = { name: teamName, mine: true, f: "🇳🇱", w: d.me[0], d: d.me[1], l: d.me[2], gf: d.me[3], ga: d.me[4], pts: d.me[5] };
-  const flagByName = nm => { const x = (typeof NATIONS !== "undefined") && NATIONS.find(n => n.n === nm); return x ? x.f : ""; };
-  const myGroup = d.grp.map(a => a[0] === null ? me : { name: a[0], mine: false, f: flagByName(a[0]), w: a[1], d: a[2], l: a[3], gf: a[4], ga: a[5], pts: a[6] });
+  const me = { name: teamName, mine: true, a: "NED", w: d.me[0], d: d.me[1], l: d.me[2], gf: d.me[3], ga: d.me[4], pts: d.me[5] };
+  const myGroup = d.grp.map(a => a[0] === null ? me : { name: a[0], mine: false, a: codeByName(a[0]), w: a[1], d: a[2], l: a[3], gf: a[4], ga: a[5], pts: a[6] });
   const myMatches = d.ord.map(a => ({ opp: natInfo(a[0]), mg: a[1], og: a[2], round: a[3], pens: !!a[4], pmg: a[5], pog: a[6], won: !!a[7], rkey: a[8] || "group" }));
   const champion = d.ch === null ? me : { name: d.ch, mine: false };
   const result = { stage: d.stg, placement: stagePlacement(d.stg), unbeaten: (me.l === 0), champion, groupWon: !!(myGroup[0] && myGroup[0].mine) };
@@ -1623,7 +1625,7 @@ function renderSharedSeason(){
     const div = document.createElement("div");
     div.className = "fix " + fixClass(x) + " in";
     const sc = x.mg + "–" + x.og + (x.pens ? ' <small>('+x.pmg+"–"+x.pog+" "+tt("pens")+')</small>' : "");
-    div.innerHTML = '<div class="fr">'+x.round+'</div><div class="fo">'+oppName(x.opp)+'</div><div class="sc">'+sc+'</div>';
+    div.innerHTML = '<div class="fr">'+x.round+'</div><div class="fo">'+natLabel(x.opp)+'</div><div class="sc">'+sc+'</div>';
     grid.appendChild(div);
   });
   $("finale").classList.add("show");
