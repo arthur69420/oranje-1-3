@@ -140,12 +140,19 @@ function shirtSVG(abbr, size){
         + '<rect x="20" y="32.1" width="9.5" height="2" fill="'+c[2]+'"/>';
       break;
     case "nl": { // Oranje-shirt: kraag, mouwen, adidas-schouderstrepen, zijpanelen, tonaal patroon
-      if(k.geo === "chevron")
+      if(k.geo === "geo88"){ // 1988: fijn geometrisch zigzagpatroon over het hele shirt
+        for(let y=2;y<36;y+=4) for(let x=0;x<40;x+=8)
+          inner += '<path d="M'+x+' '+(y+2)+' L'+(x+4)+' '+y+' L'+(x+8)+' '+(y+2)+'" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="0.8"/>';
+      }
+      else if(k.geo === "chevron")
         inner += [6,14,22,30].map(y=>'<path d="M2 '+(y+3)+' L20 '+y+' L38 '+(y+3)+'" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="1.3"/>').join("");
       else if(k.geo === "diag")
         inner += '<polygon points="20,0 40,0 40,36 33,36" fill="rgba(0,0,0,.07)"/><polygon points="20,0 20,36 8,36" fill="rgba(0,0,0,.05)"/>';
       else if(k.geo === "tonal")
         inner += '<polygon points="0,9 40,9 40,36 0,36" fill="rgba(0,0,0,.06)"/>';
+      if(k.lines === "arc") // 2004: witte gebogen lijnen over de borst
+        inner += '<path d="M11 11 Q20 26 29 11" fill="none" stroke="#FFFFFF" stroke-width="0.8"/>'
+               + '<path d="M8 8 Q20 25 32 8" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="0.6"/>';
       if(k.side)
         inner += '<rect x="10.5" y="12.5" width="1.7" height="21.5" fill="'+k.side+'"/><rect x="27.8" y="12.5" width="1.7" height="21.5" fill="'+k.side+'"/>';
       if(k.stripes){
@@ -162,12 +169,6 @@ function shirtSVG(abbr, size){
         inner += '<path d="M13 1 Q20 6.5 27 1" fill="none" stroke="'+k.collar+'" stroke-width="1.8"/>';
       if(k.hem)
         inner += '<rect x="10.5" y="32.1" width="19" height="1.8" fill="'+k.hem+'"/>';
-      // KNVB-embleem: gekroond schild op de borst (kleur per shirt, standaard donker)
-      if(k.crest !== false){
-        const cc = k.crest || "#15151c";
-        inner += '<path d="M22.6 8.7 L22.6 6.4 L24.4 7.7 L26 5.7 L27.6 7.7 L29.4 6.4 L29.4 8.7 Z" fill="'+cc+'"/>'
-               + '<path d="M22.6 9 L29.4 9 L29.4 12.6 Q29.4 16.4 26 17.8 Q22.6 16.4 22.6 12.6 Z" fill="'+cc+'"/>';
-      }
       break;
     }
   }
@@ -840,7 +841,19 @@ const TT = {
   }
 };
 const tt = (k,...a) => { const v=(TT[LANG]||TT.nl)[k]; return typeof v==="function"?v(...a):v; };
-const oppName = o => (o && o.f ? o.f + " " : "") + (o ? (o.name || o.n || o.a || "") : "");
+/* niet elk systeem (o.a. Windows) rendert vlag-emoji; dan tonen we alleen de naam */
+const FLAGS_OK = (function(){
+  try{
+    const c = document.createElement("canvas"); c.width = c.height = 16;
+    const x = c.getContext("2d"); x.font = "16px sans-serif"; x.fillStyle = "#000";
+    x.fillText("🇨🇦", -2, 14);   // 🇨🇦 — bevat rood als de vlag echt rendert
+    const d = x.getImageData(0, 0, 16, 16).data;
+    for(let i=0;i<d.length;i+=4){ if(d[i] > 120 && d[i+1] < 90 && d[i+2] < 90) return true; }
+    return false;
+  }catch(e){ return true; }
+})();
+const flag = f => (FLAGS_OK && f) ? f + " " : "";
+const oppName = o => flag(o && o.f) + (o ? (o.name || o.n || o.a || "") : "");
 function natInfo(code){ const x = (typeof NATIONS !== "undefined") && NATIONS.find(n => n.a === code); return x ? { a:x.a, f:x.f, name:x.n } : { a:code, f:"", name:code }; }
 
 /* ================= toernooisimulatie (groepsfase + knock-out) ================= */
@@ -857,6 +870,8 @@ function pickNations(n){
 function simShootout(){
   const sc = () => Math.random() < 0.75;
   let h=0, a=0, hk=0, ak=0; const seq=[];
+  const first = Math.random() < 0.5 ? "h" : "a";   // willekeurig wie begint, zoals echt
+  const other = first === "h" ? "a" : "h";
   const left = k => Math.max(0, 5-k);
   const canEnd = () => {
     if(hk<=5 && ak<=5){ if(h > a+left(ak)) return true; if(a > h+left(hk)) return true; }
@@ -865,8 +880,9 @@ function simShootout(){
   };
   let guard=0;
   while(guard++ < 40){
-    if(hk===ak){ const s=sc(); seq.push({t:"h",s}); if(s)h++; hk++; }
-    else        { const s=sc(); seq.push({t:"a",s}); if(s)a++; ak++; }
+    const t = (hk === ak) ? first : other;          // strikt afwisselen, beginnend bij 'first'
+    const s = sc(); seq.push({ t, s });
+    if(t === "h"){ if(s) h++; hk++; } else { if(s) a++; ak++; }
     if(canEnd()) break;
   }
   return { seq, h, a };
@@ -990,7 +1006,8 @@ function simulate(rig){
     const isKO = x.rkey && x.rkey !== "group";
     const div = document.createElement("div");
     div.className = "fix pending" + (isKO ? " ko" : "");
-    div.innerHTML = '<div class="top"><span>'+x.round+'</span><span class="opp">'+oppName(x.opp)+'</span></div>'
+    div.innerHTML = '<div class="fr">'+x.round+'</div>'
+      + '<div class="fo">'+oppName(x.opp)+'</div>'
       + '<div class="sc"><span class="q">?</span><span class="dash">\u2013</span><span class="q">?</span></div>';
     grid.appendChild(div);
     requestAnimationFrame(() => div.classList.add("in"));
@@ -1035,7 +1052,7 @@ function playShootout(m, done){
   const oppNm = m.opp.name || m.opp.n || "";
   panel.innerHTML = '<div class="so-card">'
     + '<p class="eyebrow so-h">' + tt("pens_full") + '</p>'
-    + '<div class="so-row" id="so-me"><span class="so-team">🇳🇱 ' + esc(teamName) + '</span><span class="so-marks"></span><span class="so-tally">0</span></div>'
+    + '<div class="so-row" id="so-me"><span class="so-team">' + flag("🇳🇱") + esc(teamName) + '</span><span class="so-marks"></span><span class="so-tally">0</span></div>'
     + '<div class="so-row" id="so-op"><span class="so-team">' + esc(oppName(m.opp)) + '</span><span class="so-marks"></span><span class="so-tally">0</span></div>'
     + '<p class="so-result" id="so-res">&nbsp;</p>'
     + '</div>';
@@ -1097,7 +1114,7 @@ function renderTournamentFinale(data, animate){
     const tr = document.createElement("tr");
     tr.className = (tm.mine ? "mine " : "") + (idx < 2 ? "cl" : "") + (animate ? "" : " in");
     const ds = tm.gf - tm.ga;
-    tr.innerHTML = "<td class='rank'>"+(idx+1)+"</td><td class='l'>"+(tm.f?tm.f+" ":"")+esc(tm.mine?teamName:tm.name)+"</td>"
+    tr.innerHTML = "<td class='rank'>"+(idx+1)+"</td><td class='l'>"+flag(tm.f)+esc(tm.mine?teamName:tm.name)+"</td>"
       + "<td>"+tm.w+"</td><td>"+tm.d+"</td><td>"+tm.l+"</td>"
       + "<td>"+(ds>0?"+":"")+ds+"</td><td><strong>"+tm.pts+"</strong></td>";
     tbl.appendChild(tr);
@@ -1606,7 +1623,7 @@ function renderSharedSeason(){
     const div = document.createElement("div");
     div.className = "fix " + fixClass(x) + " in";
     const sc = x.mg + "–" + x.og + (x.pens ? ' <small>('+x.pmg+"–"+x.pog+" "+tt("pens")+')</small>' : "");
-    div.innerHTML = '<div class="top"><span>'+x.round+'</span><span class="opp">'+oppName(x.opp)+'</span></div><div class="sc">'+sc+'</div>';
+    div.innerHTML = '<div class="fr">'+x.round+'</div><div class="fo">'+oppName(x.opp)+'</div><div class="sc">'+sc+'</div>';
     grid.appendChild(div);
   });
   $("finale").classList.add("show");
