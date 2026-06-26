@@ -841,17 +841,11 @@ const TT = {
   }
 };
 const tt = (k,...a) => { const v=(TT[LANG]||TT.nl)[k]; return typeof v==="function"?v(...a):v; };
-/* eigen SVG-vlaggen (werken overal, anders dan emoji-vlaggen op o.a. Windows) */
+/* echte vlaggen via flagcdn (accuraat, werken overal) */
 function flagSVG(code){
-  const f = (typeof FLAG !== "undefined") && FLAG[code];
-  let inner;
-  if(!f) inner = '<rect width="3" height="2" fill="#888"/>';
-  else if(f.svg) inner = f.svg;
-  else if(f.t === "v3") inner = f.c.map((c,i)=>'<rect x="'+i+'" width="1" height="2" fill="'+c+'"/>').join("");
-  else if(f.t === "h3") inner = f.c.map((c,i)=>'<rect y="'+(i*2/3)+'" width="3" height="'+(2/3)+'" fill="'+c+'"/>').join("");
-  else if(f.t === "h2") inner = f.c.map((c,i)=>'<rect y="'+i+'" width="3" height="1" fill="'+c+'"/>').join("");
-  else inner = '<rect width="3" height="2" fill="#888"/>';
-  return '<svg class="flag" viewBox="0 0 3 2" preserveAspectRatio="none" aria-hidden="true">'+inner+'</svg>';
+  const iso = (typeof FLAG !== "undefined") && FLAG[code];
+  if(!iso) return '<span class="flag flag-x" aria-hidden="true"></span>';
+  return '<img class="flag" alt="" src="https://flagcdn.com/w40/'+iso+'.png" srcset="https://flagcdn.com/w80/'+iso+'.png 2x">';
 }
 const flagHTML = code => code ? flagSVG(code) : "";
 const oppName = o => o ? (o.name || o.n || o.a || "") : "";   // alleen naam (platte tekst)
