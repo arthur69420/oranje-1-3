@@ -1471,25 +1471,32 @@ function _drawShareCard(){
   do { ctx.font = "600 " + size + "px Oswald, sans-serif"; size -= 4; } while(ctx.measureText(name).width > W - 2 * PAD && size > 40);
   ctx.fillText(name, PAD, 312);
   ctx.font = "500 28px 'IBM Plex Mono', monospace"; ctx.fillStyle = MUT;
-  ctx.fillText(t("card_season") + " " + season + " · " + ord(pos).toUpperCase() + " " + t("card_place"), PAD, 360);
+  const stageTxt = lastTourney ? stageLabel(lastTourney.result.stage).toUpperCase() : (ord(pos).toUpperCase() + " " + t("card_place"));
+  ctx.fillText(t("card_season") + " " + season + " · " + stageTxt, PAD, 360);
   // groot record
   ctx.font = "italic 600 170px Oswald, sans-serif"; ctx.fillStyle = WHITE;
   ctx.fillText(me.w + "–" + me.d + "–" + me.l, PAD - 4, 532);
   ctx.font = "600 40px Oswald, sans-serif"; ctx.fillStyle = RED;
   ctx.fillText(me.pts + " " + t("card_points"), PAD, 590);
-  // resultatengrid
-  const cols = 17, gap = 9, gx = PAD, gy = 636, gw = W - 2 * PAD;
-  const cell = (gw - (cols - 1) * gap) / cols;
+  // toernooipad: elke wedstrijd een regel (groepsfase + knock-out)
+  const gy = 636, mLineH = 40, gw = W - 2 * PAD;
   lastOrder.forEach((x, idx) => {
-    const r = Math.floor(idx / cols), c = idx % cols;
-    ctx.fillStyle = x.mg > x.og ? "#27AE60" : (x.mg < x.og ? RED : "#7E8BB0");
-    ctx.fillRect(gx + c * (cell + gap), gy + r * (cell + gap), cell, cell);
+    const ly = gy + idx * mLineH;
+    const won = x.mg > x.og || x.won === true;
+    const lost = x.mg < x.og || (x.won === false && x.mg === x.og);
+    ctx.fillStyle = won ? "#27AE60" : (lost ? RED : "#7E8BB0");
+    ctx.fillRect(PAD, ly - 20, 8, 26);
+    ctx.fillStyle = MUT; ctx.font = "500 19px 'IBM Plex Mono', monospace"; ctx.textAlign = "left";
+    ctx.fillText(clipText(ctx, String(x.round || "").toUpperCase(), 250), PAD + 24, ly);
+    ctx.fillStyle = WHITE; ctx.font = "600 24px Inter, sans-serif";
+    ctx.fillText(clipText(ctx, oppName(x.opp), gw - 470), PAD + 285, ly);
+    ctx.textAlign = "right"; ctx.font = "700 26px 'IBM Plex Mono', monospace";
+    const sc = x.mg + "–" + x.og + (x.pens ? "  (" + x.pmg + "–" + x.pog + " " + tt("pens") + ")" : "");
+    ctx.fillText(sc, W - PAD, ly);
+    ctx.textAlign = "left";
   });
-  let y = gy + 2 * cell + gap + 44;
-  ctx.font = "500 22px 'IBM Plex Mono', monospace"; ctx.fillStyle = MUT;
-  ctx.fillText(t("card_legend"), PAD, y);
+  let y = gy + lastOrder.length * mLineH + 26;
   // squad (XI)
-  y += 52;
   ctx.font = "600 26px Oswald, sans-serif"; ctx.fillStyle = WHITE;
   ctx.fillText(t("card_squad"), PAD, y);
   ctx.strokeStyle = RED; ctx.lineWidth = 3;
