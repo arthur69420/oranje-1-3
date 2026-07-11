@@ -1654,7 +1654,7 @@ $("rerollbtn").onclick = reroll;
 $("pbback").onclick = backToSquad;
 $("resetbtn").onclick = resetAll;
 $("simbtn").onclick = () => { if(pickedCount === 11) simulate(rigArmed); };
-$("againbtn").onclick = resetAll;
+if($("againbtn")) $("againbtn").onclick = resetAll;
 
 /* geheime demo-trigger: 5x snel op het 34-0-0-logo klikken wapent een
    gegarandeerd perfect seizoen (telt niet mee voor records) */

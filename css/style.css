@@ -584,9 +584,9 @@ button{touch-action:manipulation}
 
 @media (max-width:760px){
   .slot{width:54px;height:54px;font-size:10.5px}
-  .slot.filled{min-width:58px;padding:4px 6px}
-  .slot.filled .nm{font-size:10px;max-width:80px}
-  .slot.filled .meta{font-size:8.5px}
+  .slot.filled{width:92px;padding:4px 6px}
+  .slot.filled .nm{font-size:10px}
+  .slot.filled .meta{font-size:8px}
   .slot.filled .shirt{margin-top:-16px}
   .pchoice{padding:11px 10px;font-size:13px}
   .smallbtn{padding:11px 14px}
